@@ -3,14 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Windows 7 Ultimate - Final</title>
+    <title>Windows 7 Ultimate - Pro Drag & Shadow</title>
     <style>
         :root {
-            --win-glass: rgba(195, 225, 245, 0.9);
-            --win-border: #565656;
             --font-main: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            --select-blue: #e8f5fd;
-            --select-border: #9dcbfb;
+            --win-blue: #1f6b9c;
         }
 
         * { box-sizing: border-box; user-select: none; -webkit-user-drag: none; }
@@ -26,17 +23,17 @@
         /* --- UTILS --- */
         .icon-16 { width: 16px; height: 16px; display: block; object-fit: contain; }
         .icon-48 { width: 48px; height: 48px; display: block; object-fit: contain; }
+        .hidden { display: none !important; }
 
         /* --- MAIN FIXED EXPLORER WINDOW --- */
         #explorer-fixed {
             position: absolute; top: 0; left: 0;
-            width: 100%; height: calc(100% - 40px); /* Fill screen minus taskbar */
+            width: 100%; height: calc(100% - 40px);
             background: rgba(220, 235, 245, 1);
             display: flex; flex-direction: column;
             z-index: 1;
         }
 
-        /* Title Bar */
         .title-bar {
             height: 30px;
             background: linear-gradient(to bottom, #eef7fc 0%, #bedbf1 100%);
@@ -45,7 +42,6 @@
         }
         .title-text { flex-grow: 1; padding-left: 8px; font-size: 12px; color: #333; text-shadow: 0 1px 0 rgba(255,255,255,0.8); }
 
-        /* Navigation Bar */
         .nav-bar {
             height: 38px; display: flex; align-items: center; padding: 0 10px; gap: 10px;
             background: #f0f0f0; border-bottom: 1px solid #d9d9d9;
@@ -66,13 +62,17 @@
             display: flex; align-items: center; padding: 0 5px;
             box-shadow: inset 0 1px 2px rgba(0,0,0,0.1); font-size: 12px;
         }
-        .search-bar {
+        
+        .search-container {
             width: 220px; height: 26px; background: white; border: 1px solid #7d8ea6;
-            margin-left: 10px; padding: 0 8px; display: flex; align-items: center;
-            font-size: 12px; color: gray; font-style: italic;
+            margin-left: 10px; display: flex; align-items: center; padding-right: 5px;
         }
+        .search-inp {
+            border: none; outline: none; width: 100%; height: 100%;
+            padding: 0 8px; font-size: 12px; font-style: italic; color: #555;
+        }
+        .search-icon { width: 14px; opacity: 0.5; }
 
-        /* Toolbar */
         .toolbar {
             height: 32px; background: #f4f7fc; border-bottom: 1px solid #d9d9d9;
             display: flex; align-items: center; padding: 0 15px; gap: 10px;
@@ -80,15 +80,11 @@
         }
         .tool-btn { cursor: pointer; padding: 3px 8px; border: 1px solid transparent; }
         .tool-btn:hover { background: #eaf6fd; border-color: #bce1fc; }
-        
-        /* Special Button for functionality */
         .btn-add { font-weight: bold; color: #0066cc; }
-        .btn-empty { color: red; display: none; } /* Hidden by default */
+        .btn-empty { color: red; display: none; }
 
-        /* Main Content */
         .main-container { flex-grow: 1; display: flex; background: white; overflow: hidden; }
 
-        /* Sidebar */
         .sidebar {
             width: 230px; background: #fcfcfc; border-right: 1px solid #dae5f0;
             padding-top: 10px; overflow-y: auto;
@@ -103,14 +99,12 @@
         .indent-2 { padding-left: 35px; }
         .group-title { font-weight: normal; color: #1e1e1e; }
 
-        /* File Grid */
         .file-view {
             flex-grow: 1; padding: 10px;
             display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
             grid-auto-rows: 100px; align-content: start; gap: 5px;
             overflow-y: auto; background: white;
         }
-
         .file-card {
             display: flex; flex-direction: column; align-items: center;
             padding: 5px; border: 1px solid transparent; border-radius: 3px; cursor: pointer;
@@ -120,39 +114,61 @@
         .file-card.selected { background: #cce8ff; border-color: #99d1ff; }
         .file-label { font-size: 11px; text-align: center; color: #1e1e1e; word-wrap: break-word; line-height: 1.2; margin-top: 4px; }
 
-        /* --- PREVIEW WINDOW --- */
+        /* --- UPDATED POPUP WINDOWS WITH DEEP SHADOWS --- */
         #preview-window, #add-window, #del-window {
-            position: absolute; top: 15%; left: 25%; width: 500px;
-            background: rgba(225, 235, 245, 0.95);
-            border-radius: 6px; border: 1px solid #777;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            position: absolute; top: 10%; left: 15%; width: 600px; height: 450px;
+            background: rgba(245, 250, 255, 0.98);
+            border-radius: 8px; 
+            border: 1px solid rgba(0,0,0,0.4);
+            /* EXTREME SHADOW FOR REALISM */
+            box-shadow: 
+                0 20px 60px rgba(0,0,0,0.6), 
+                0 0 0 1px rgba(255,255,255,0.4) inset;
             display: flex; flex-direction: column; z-index: 2000;
-            backdrop-filter: blur(5px);
+            backdrop-filter: blur(10px);
+            transition: width 0.2s, height 0.2s, transform 0.2s, opacity 0.2s;
+            touch-action: none; /* DRAG ANYWHERE */
         }
-        #preview-window { height: 400px; }
         
-        .hidden { display: none !important; }
+        #add-window, #del-window { width: 400px; height: auto; }
 
         .popup-header {
-            height: 30px; display: flex; justify-content: space-between; align-items: center;
-            padding: 0 8px; cursor: move;
-            background: linear-gradient(to bottom, #fff 0%, #e0e0e0 100%);
-            border-bottom: 1px solid #999; border-radius: 6px 6px 0 0;
-        }
-        .popup-body {
-            padding: 15px; background: #f0f0f0; flex-grow: 1;
-            font-size: 12px; border-radius: 0 0 6px 6px;
-        }
-        .popup-content-view {
-            width: 100%; height: 100%; background: #222; display: flex; justify-content: center; align-items: center; overflow: hidden;
+            height: 34px; display: flex; justify-content: space-between; align-items: center;
+            padding: 0 4px 0 10px; cursor: move;
+            background: linear-gradient(to bottom, #ffffff 0%, #d1e1f0 100%);
+            border-bottom: 1px solid #a0a0a0; border-radius: 8px 8px 0 0;
         }
         
-        /* Form Styles */
-        .form-group { margin-bottom: 10px; }
-        .form-group label { display: block; margin-bottom: 3px; color: #333; }
-        .form-group input, .form-group select { width: 100%; padding: 4px; border: 1px solid #ccc; }
-        .btn-win { padding: 4px 15px; border: 1px solid #888; background: #ddd; cursor: pointer; }
-        .btn-win:hover { background: #fff; }
+        .win-controls { display: flex; height: 100%; align-items: center; gap: 4px; padding-right: 4px; }
+        .win-btn {
+            width: 30px; height: 20px; display: flex; justify-content: center;
+            align-items: center; cursor: pointer; font-size: 12px;
+            border-radius: 3px; background: linear-gradient(to bottom, #fff 0%, #cbd9e6 100%); 
+            border: 1px solid #8e9cad; box-shadow: inset 0 1px 0 #fff;
+        }
+        .win-btn:hover { background: #eaf6fd; border-color: #3c7fb1; }
+        .win-btn.close-btn:hover { background: #e81123; color: white; border-color: #b00b1a; box-shadow: none; }
+
+        .popup-body {
+            padding: 15px; background: #f0f0f0; flex-grow: 1;
+            font-size: 13px; border-radius: 0 0 8px 8px;
+        }
+        .popup-content-view {
+            width: 100%; height: 100%; background: #000; 
+            display: flex; justify-content: center; align-items: center; overflow: hidden;
+        }
+
+        .maximized {
+            top: 0 !important; left: 0 !important; width: 100% !important; height: calc(100% - 40px) !important;
+            border-radius: 0 !important; border: none !important;
+        }
+        .minimized { transform: scale(0.5) translateY(100vh); opacity: 0; pointer-events: none; }
+
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; margin-bottom: 4px; color: #333; font-weight: bold; }
+        .form-group input, .form-group select { width: 100%; padding: 6px; border: 1px solid #7d8ea6; border-radius: 2px; }
+        .btn-win { padding: 6px 20px; border: 1px solid #707070; background: linear-gradient(to bottom, #f2f2f2, #ebebeb); cursor: pointer; border-radius: 3px; }
+        .btn-win:active { background: #cce4f7; }
 
         /* --- TASKBAR --- */
         #taskbar {
@@ -161,25 +177,29 @@
             border-top: 1px solid rgba(255,255,255,0.3);
             display: flex; align-items: center; z-index: 9999;
         }
-        .start-btn {
-            width: 50px; height: 100%; margin-right: 10px;
-            display: flex; justify-content: center; align-items: center;
-        }
+        .start-btn { width: 52px; height: 100%; display: flex; justify-content: center; align-items: center; }
         .orb-img {
-            width: 34px; height: 34px; border-radius: 50%;
-            background: radial-gradient(circle at 50% 50%, #1f6b9c 0%, #13344d 100%);
-            border: 1px solid #666;
-            box-shadow: inset 0 0 5px #42b6f5, 0 0 5px rgba(255,255,255,0.2);
+            width: 36px; height: 36px; border-radius: 50%;
+            background: radial-gradient(circle at 50% 50%, #2a82be 0%, #13344d 100%);
+            border: 1px solid rgba(255,255,255,0.4);
+            box-shadow: 0 0 10px rgba(66,182,245,0.5);
             display:flex; justify-content:center; align-items:center;
             color:white; font-weight:bold; font-size:18px; font-style:italic;
         }
+        .task-item {
+            height: 32px; width: 160px; background: rgba(255,255,255,0.1); 
+            border-radius: 3px; display: flex; align-items: center; padding: 0 8px; gap:8px;
+            cursor: pointer; margin: 0 3px; border: 1px solid rgba(255,255,255,0.2);
+            color: white; font-size: 11px;
+        }
+        .task-item.active { background: rgba(255,255,255,0.25); border-color:rgba(255,255,255,0.6); }
+
         .tray-area { margin-left: auto; display: flex; align-items: center; gap: 12px; padding-right: 15px; color: white; font-size: 12px; }
 
     </style>
 </head>
 <body>
 
-    <!-- MAIN EXPLORER -->
     <div id="explorer-fixed">
         <div class="title-bar">
             <img src="https://img.icons8.com/color/48/monitor--v1.png" class="icon-16" style="margin-right:6px">
@@ -195,7 +215,10 @@
                 <img src="https://img.icons8.com/color/48/folder-invoices--v1.png" class="icon-16" style="margin-right:5px">
                 <span id="address-path">Libraries > Pictures</span>
             </div>
-            <div class="search-bar">Search...</div>
+            <div class="search-container">
+                <input type="text" id="search-inp" class="search-inp" placeholder="Search..." onkeyup="filterFiles()">
+                <img src="https://img.icons8.com/ios-glyphs/30/000000/search--v1.png" class="search-icon">
+            </div>
         </div>
 
         <div class="toolbar">
@@ -224,6 +247,9 @@
                 <div class="tree-item indent-2 active" id="node-Pictures" onclick="nav('Pictures')">
                     <img src="https://img.icons8.com/color/48/image-file.png" class="icon-16"> <span style="margin-left:5px">Pictures</span>
                 </div>
+                <div class="tree-item indent-2" id="node-Videos" onclick="nav('Videos')">
+                    <img src="https://img.icons8.com/color/48/video-file.png" class="icon-16"> <span style="margin-left:5px">Videos</span>
+                </div>
                 <div class="tree-item indent-2" id="node-Music" onclick="nav('Music')">
                     <img src="https://img.icons8.com/color/48/musical-notes.png" class="icon-16"> <span style="margin-left:5px">Music</span>
                 </div>
@@ -236,9 +262,7 @@
                 </div>
             </div>
 
-            <div class="file-view" id="file-grid">
-                <!-- JS Renders Files Here -->
-            </div>
+            <div class="file-view" id="file-grid"></div>
         </div>
 
         <div style="height:28px; background:#f5f6f7; border-top:1px solid #ddd; padding:0 10px; display:flex; align-items:center; color:#555; font-size:11px;">
@@ -246,25 +270,37 @@
         </div>
     </div>
 
+    <div id="preview-window" class="hidden">
+        <div class="popup-header">
+            <img src="https://img.icons8.com/color/48/opened-folder.png" style="width:16px; margin-right:5px;">
+            <span id="prev-title" style="flex-grow:1; font-weight:bold; text-shadow:0 1px 0 rgba(255,255,255,0.8);">Preview</span>
+            <div class="win-controls">
+                <div class="win-btn" onclick="toggleMinimize()">_</div>
+                <div class="win-btn" onclick="toggleMaximize()">▢</div>
+                <div class="win-btn close-btn" onclick="closePreview()">×</div>
+            </div>
+        </div>
+        <div class="popup-content-view" id="prev-content"></div>
+    </div>
 
-    <!-- 1. ADD FILE POPUP -->
-    <div id="add-window" class="hidden" style="height:auto;">
-        <div class="popup-header"><span>Create New File</span><span style="cursor:pointer" onclick="closeAddModal()">×</span></div>
+    <div id="add-window" class="hidden">
+        <div class="popup-header"><span>Create New File</span><span style="cursor:pointer; padding: 0 10px;" onclick="closeAddModal()">×</span></div>
         <div class="popup-body">
             <div class="form-group">
                 <label>File Name:</label>
-                <input type="text" id="inp-name" value="NewCode.js">
+                <input type="text" id="inp-name" value="MyVideo.mp4">
             </div>
             <div class="form-group">
                 <label>Type:</label>
                 <select id="inp-type">
+                    <option value="video">Video URL</option>
                     <option value="code">Code / Text</option>
                     <option value="img">Image URL</option>
                 </select>
             </div>
             <div class="form-group">
                 <label>Content / Source URL:</label>
-                <input type="text" id="inp-src" placeholder="Code or http://image.jpg...">
+                <input type="text" id="inp-src" placeholder="http://...">
             </div>
             <div style="text-align:right; margin-top:15px;">
                 <button class="btn-win" onclick="saveFile()">Create</button>
@@ -273,17 +309,7 @@
         </div>
     </div>
 
-    <!-- 2. PREVIEW POPUP -->
-    <div id="preview-window" class="hidden">
-        <div class="popup-header" id="drag-prev">
-            <span id="prev-title">Preview</span>
-            <div style="cursor:pointer; font-weight:bold;" onclick="closePreview()">×</div>
-        </div>
-        <div class="popup-content-view" id="prev-content"></div>
-    </div>
-
-    <!-- 3. DELETE CONFIRMATION POPUP -->
-    <div id="del-window" class="hidden" style="height:auto; width:400px;">
+    <div id="del-window" class="hidden">
         <div class="popup-header"><span>Delete File</span></div>
         <div class="popup-body">
             <div style="display:flex; align-items:center; gap:15px; padding-bottom:15px;">
@@ -297,9 +323,9 @@
         </div>
     </div>
 
-    <!-- TASKBAR -->
     <div id="taskbar">
         <div class="start-btn"><div class="orb-img">W</div></div>
+        <div id="taskbar-apps" style="display:flex; height:100%;"></div>
         <div style="flex-grow:1;"></div>
         <div class="tray-area">
             <img src="https://img.icons8.com/ios-filled/50/ffffff/wifi--v1.png" style="width:16px;">
@@ -308,207 +334,153 @@
     </div>
 
     <script>
-        // --- FILE SYSTEM DATA ---
         let fileSystem = {
-            'Pictures': [
-                { id: 1, name: 'Mountain.jpg', type: 'img', src: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=500', icon: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=100' },
-                { id: 2, name: 'Code_Screenshot.png', type: 'img', src: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=500', icon: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=100' }
-            ],
-            'Music': [
-                { id: 3, name: 'Track01.mp3', type: 'mp3', icon: 'https://img.icons8.com/color/48/audio-file.png' }
-            ],
-            'Desktop': [
-                { id: 4, name: 'ToDo.txt', type: 'code', src: '1. Buy Milk\n2. Code Windows Sim', icon: 'https://img.icons8.com/color/48/txt.png' }
-            ],
+            'Pictures': [{ id: 1, name: 'Mountain.jpg', type: 'img', src: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=500', icon: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=100' }],
+            'Videos': [{ id: 10, name: 'BigBuckBunny.mp4', type: 'video', src: 'https://www.w3schools.com/html/mov_bbb.mp4', icon: 'https://img.icons8.com/color/48/video-file.png' }],
+            'Music': [{ id: 3, name: 'Track01.mp3', type: 'mp3', icon: 'https://img.icons8.com/color/48/audio-file.png' }],
+            'Desktop': [{ id: 4, name: 'ToDo.txt', type: 'code', src: '1. Buy Milk\n2. Code Windows Sim', icon: 'https://img.icons8.com/color/48/txt.png' }],
             'Downloads': [],
             'Recycle Bin': []
         };
 
-        let currentFolder = 'Pictures';
-        let deleteTargetId = null;
+        let currentFolder = 'Pictures', deleteTargetId = null, activeFile = null;
 
-        // --- NAVIGATION & RENDER ---
         function nav(folder) {
             currentFolder = folder;
-            
-            // Sidebar UI update
             document.querySelectorAll('.tree-item').forEach(el => el.classList.remove('active'));
             let node = document.getElementById('node-' + folder);
             if(node) node.classList.add('active');
-
-            // Breadcrumb update
             document.getElementById('address-path').innerText = folder === 'Recycle Bin' ? 'Recycle Bin' : `Libraries > ${folder}`;
-            
-            // Empty Bin Button visibility
             document.getElementById('btn-empty').style.display = (folder === 'Recycle Bin') ? 'block' : 'none';
-
             render();
         }
 
-        function render() {
+        function render(customList = null) {
             const grid = document.getElementById('file-grid');
             grid.innerHTML = "";
-            const files = fileSystem[currentFolder] || [];
+            const files = customList || fileSystem[currentFolder] || [];
             document.getElementById('status-count').innerText = `Items: ${files.length}`;
-
-            if(files.length === 0) {
-                grid.innerHTML = `<div style="color:#777; width:200px; padding:20px;">Folder is empty.</div>`;
-                return;
-            }
-
             files.forEach(file => {
                 const el = document.createElement('div');
                 el.className = 'file-card';
-                
-                // Icon Logic
-                let icon = file.icon; 
-                // Fallback for custom code files if no icon provided
-                if(!icon) icon = (file.type === 'img') ? file.src : 'https://img.icons8.com/color/48/file.png';
-
-                el.innerHTML = `<img src="${icon}" class="icon-48" draggable="false"><div class="file-label">${file.name}</div>`;
-                
-                // EVENTS
-                el.onclick = () => {
-                    document.querySelectorAll('.file-card').forEach(c => c.classList.remove('selected'));
-                    el.classList.add('selected');
-                };
-                
+                el.innerHTML = `<img src="${file.icon || 'https://img.icons8.com/color/48/file.png'}" class="icon-48"><div class="file-label">${file.name}</div>`;
+                el.onclick = () => { document.querySelectorAll('.file-card').forEach(c => c.classList.remove('selected')); el.classList.add('selected'); };
                 el.ondblclick = () => openPreview(file);
-
-                // Long Press (Delete)
                 addLongPress(el, () => promptDelete(file));
-
                 grid.appendChild(el);
             });
         }
 
-        // --- LONG PRESS LOGIC ---
-        function addLongPress(el, action) {
-            let timer;
-            const start = () => timer = setTimeout(action, 800);
-            const end = () => clearTimeout(timer);
-            
-            el.addEventListener('mousedown', start);
-            el.addEventListener('touchstart', start);
-            el.addEventListener('mouseup', end);
-            el.addEventListener('mouseleave', end);
-            el.addEventListener('touchend', end);
+        function openPreview(file) {
+            activeFile = file;
+            const win = document.getElementById('preview-window');
+            const content = document.getElementById('prev-content');
+            document.getElementById('prev-title').innerText = file.name;
+            win.classList.remove('hidden'); win.classList.remove('minimized'); win.style.display = 'flex';
+            if(file.type === 'img') content.innerHTML = `<img src="${file.src}" style="max-width:100%; max-height:100%;">`;
+            else if(file.type === 'video') content.innerHTML = `<video src="${file.src}" controls autoplay style="width:100%; height:100%;"></video>`;
+            else content.innerHTML = `<textarea style="width:100%; height:100%; background:#222; color:#0f0; border:none; padding:10px; font-family:monospace;">${file.src || ""}</textarea>`;
+            updateTaskbar();
         }
 
-        // --- ADD FILE LOGIC ---
+        function closePreview() { document.getElementById('preview-window').classList.add('hidden'); document.getElementById('prev-content').innerHTML = ""; activeFile = null; updateTaskbar(); }
+        function toggleMinimize() { document.getElementById('preview-window').classList.toggle('minimized'); updateTaskbar(); }
+        function toggleMaximize() { document.getElementById('preview-window').classList.toggle('maximized'); }
+
+        function updateTaskbar() {
+            const container = document.getElementById('taskbar-apps');
+            if(!activeFile) { container.innerHTML = ''; return; }
+            const isMin = document.getElementById('preview-window').classList.contains('minimized');
+            container.innerHTML = `<div class="task-item ${!isMin ? 'active' : ''}" onclick="document.getElementById('preview-window').classList.remove('minimized'); updateTaskbar();"><img src="${activeFile.icon}" class="icon-16"><span>${activeFile.name}</span></div>`;
+        }
+
+        /* --- FIXED PRO DRAG LOGIC: DRAG BY CLICKING ANYWHERE --- */
+        makeDraggable(document.getElementById('preview-window'));
+        makeDraggable(document.getElementById('add-window'));
+        makeDraggable(document.getElementById('del-window'));
+
+        function makeDraggable(element) {
+            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
+            
+            // Drag on ANY part of the window
+            element.onmousedown = dragStart;
+            element.ontouchstart = dragStart;
+
+            function dragStart(e) {
+                // DON'T drag if clicking an input, button, or textarea
+                const tag = e.target.tagName.toLowerCase();
+                if(['input', 'button', 'select', 'textarea', 'video'].includes(tag) || e.target.closest('.win-controls')) return;
+
+                if(element.classList.contains('maximized')) return;
+                
+                const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+                const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+
+                pos3 = clientX;
+                pos4 = clientY;
+                
+                document.onmouseup = closeDrag;
+                document.onmousemove = elementDrag;
+                document.ontouchend = closeDrag;
+                document.ontouchmove = elementDrag;
+            }
+
+            function elementDrag(e) {
+                if (e.cancelable) e.preventDefault();
+                const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+                const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+
+                pos1 = pos3 - clientX;
+                pos2 = pos4 - clientY;
+                pos3 = clientX;
+                pos4 = clientY;
+                element.style.top = (element.offsetTop - pos2) + "px";
+                element.style.left = (element.offsetLeft - pos1) + "px";
+            }
+
+            function closeDrag() {
+                document.onmouseup = null; document.onmousemove = null;
+                document.ontouchend = null; document.ontouchmove = null;
+            }
+        }
+
+        function filterFiles() {
+            const query = document.getElementById('search-inp').value.toLowerCase();
+            render(fileSystem[currentFolder].filter(f => f.name.toLowerCase().includes(query)));
+        }
+
+        function addLongPress(el, action) {
+            let timer;
+            el.addEventListener('mousedown', () => timer = setTimeout(action, 800));
+            el.addEventListener('touchstart', () => timer = setTimeout(action, 800));
+            el.addEventListener('mouseup', () => clearTimeout(timer));
+            el.addEventListener('touchend', () => clearTimeout(timer));
+        }
+
+        function promptDelete(file) { deleteTargetId = file.id; document.getElementById('del-name').innerText = file.name; document.getElementById('del-window').classList.remove('hidden'); }
+        function confirmDelete() { 
+            const list = fileSystem[currentFolder];
+            const idx = list.findIndex(f => f.id === deleteTargetId);
+            if(idx > -1) {
+                if(currentFolder !== 'Recycle Bin') fileSystem['Recycle Bin'].push(list.splice(idx, 1)[0]);
+                else list.splice(idx, 1);
+            }
+            closeDelModal(); render();
+        }
+        function closeDelModal() { document.getElementById('del-window').classList.add('hidden'); }
         function openAddModal() { document.getElementById('add-window').classList.remove('hidden'); }
         function closeAddModal() { document.getElementById('add-window').classList.add('hidden'); }
-        
         function saveFile() {
             const name = document.getElementById('inp-name').value;
             const type = document.getElementById('inp-type').value;
             const src = document.getElementById('inp-src').value;
-
-            if(!name) return alert("Name required");
-
-            let icon = 'https://img.icons8.com/color/48/file.png';
-            if(type === 'code') icon = 'https://img.icons8.com/color/48/code-file.png';
-            if(type === 'img') icon = src;
-
-            const newFile = {
-                id: Date.now(),
-                name: name,
-                type: type,
-                src: src,
-                icon: icon
-            };
-
-            // Add to current folder (if not bin)
-            if(currentFolder === 'Recycle Bin') {
-                alert("Cannot create files in Recycle Bin. Switched to Desktop.");
-                fileSystem['Desktop'].push(newFile);
-                nav('Desktop');
-            } else {
-                fileSystem[currentFolder].push(newFile);
-                render();
-            }
-            closeAddModal();
+            if(!name) return;
+            fileSystem[currentFolder].push({ id: Date.now(), name, type, src, icon: type === 'video' ? 'https://img.icons8.com/color/48/video-file.png' : (type==='img'?src:'https://img.icons8.com/color/48/file.png') });
+            closeAddModal(); render();
         }
 
-        // --- DELETE LOGIC ---
-        function promptDelete(file) {
-            deleteTargetId = file.id;
-            document.getElementById('del-name').innerText = file.name;
-            document.getElementById('del-window').classList.remove('hidden');
-        }
-
-        function confirmDelete() {
-            const list = fileSystem[currentFolder];
-            const index = list.findIndex(f => f.id === deleteTargetId);
-            
-            if(index > -1) {
-                const file = list[index];
-                if(currentFolder !== 'Recycle Bin') {
-                    // Move to bin
-                    fileSystem['Recycle Bin'].push(file);
-                    list.splice(index, 1);
-                } else {
-                    // Permanent delete
-                    list.splice(index, 1);
-                }
-            }
-            closeDelModal();
-            render();
-        }
-
-        function closeDelModal() {
-            document.getElementById('del-window').classList.add('hidden');
-            deleteTargetId = null;
-        }
-
-        function emptyBin() {
-            if(confirm("Permanently delete all items in Recycle Bin?")) {
-                fileSystem['Recycle Bin'] = [];
-                render();
-            }
-        }
-
-        // --- PREVIEW LOGIC ---
-        function openPreview(file) {
-            const win = document.getElementById('preview-window');
-            const content = document.getElementById('prev-content');
-            document.getElementById('prev-title').innerText = file.name;
-            win.classList.remove('hidden');
-
-            if(file.type === 'img') {
-                content.innerHTML = `<img src="${file.src}" style="max-width:100%; max-height:100%;">`;
-            } else {
-                content.innerHTML = `<textarea style="width:100%; height:100%; background:#222; color:#0f0; border:none; padding:10px; font-family:monospace;">${file.src || "// No Content"}</textarea>`;
-            }
-        }
-        function closePreview() { document.getElementById('preview-window').classList.add('hidden'); }
-
-        // --- DRAG WINDOW UTILS ---
-        const pWin = document.getElementById('preview-window');
-        const pHandle = document.getElementById('drag-prev');
-        let isDrag = false, sx, sy, lx, ly;
-        
-        pHandle.addEventListener('mousedown', (e) => {
-            isDrag = true; sx = e.clientX; sy = e.clientY; lx = pWin.offsetLeft; ly = pWin.offsetTop;
-        });
-        document.addEventListener('mousemove', (e) => {
-            if(isDrag) {
-                pWin.style.left = (lx + e.clientX - sx) + 'px';
-                pWin.style.top = (ly + e.clientY - sy) + 'px';
-            }
-        });
-        document.addEventListener('mouseup', () => isDrag = false);
-
-        // --- CLOCK ---
-        setInterval(() => {
-            const d = new Date();
-            const min = String(d.getMinutes()).padStart(2,'0');
-            document.getElementById('clock').innerText = `${d.getHours()}:${min}`;
-        }, 1000);
-
-        // --- INIT ---
+        setInterval(() => { const d = new Date(); document.getElementById('clock').innerText = `${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`; }, 1000);
         nav('Pictures');
-
     </script>
 </body>
 </html>
