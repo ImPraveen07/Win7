@@ -335,13 +335,20 @@
 
     <script>
         let fileSystem = {
-            'Pictures': [{ id: 1, name: 'Mountain.jpg', type: 'img', src: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=500', icon: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=100' }],
-            'Videos': [{ id: 10, name: 'BigBuckBunny.mp4', type: 'video', src: 'https://www.w3schools.com/html/mov_bbb.mp4', icon: 'https://img.icons8.com/color/48/video-file.png' }],
-            'Music': [{ id: 3, name: 'Track01.mp3', type: 'mp3', icon: 'https://img.icons8.com/color/48/audio-file.png' }],
-            'Desktop': [{ id: 4, name: 'ToDo.txt', type: 'code', src: '1. Buy Milk\n2. Code Windows Sim', icon: 'https://img.icons8.com/color/48/txt.png' }],
-            'Downloads': [],
-            'Recycle Bin': []
-        };
+    'Pictures': [
+        { id: 1, name: 'Mountain.jpg', type: 'img', src: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=500', icon: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=100' },
+        { id: 2, name: 'n.jpg', type: 'img', src: 'n.jpg', icon: 'n.jpg' } // Added your image here
+    ],
+    'Videos': [
+        { id: 10, name: 'BigBuckBunny.mp4', type: 'video', src: 'https://www.w3schools.com/html/mov_bbb.mp4', icon: 'https://img.icons8.com/color/48/video-file.png' },
+        { id: 11, name: 'indu.mp4', type: 'video', src: 'indu.mp4', icon: 'https://img.icons8.com/color/48/video-file.png' } // Added your n1.mp4 here
+    ],
+    'Music': [{ id: 3, name: 'Track01.mp3', type: 'mp3', icon: 'https://img.icons8.com/color/48/audio-file.png' }],
+    'Desktop': [{ id: 4, name: 'ToDo.txt', type: 'code', src: '1. Buy Milk\n2. Code Windows Sim', icon: 'https://img.icons8.com/color/48/txt.png' }],
+    'Downloads': [],
+    'Recycle Bin': []
+};
+
 
         let currentFolder = 'Pictures', deleteTargetId = null, activeFile = null;
 
