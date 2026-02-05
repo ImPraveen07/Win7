@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Windows 7 Ultimate - Pro Drag & Shadow</title>
+    <title>Windows 7 Ultimate - Blow Edition</title>
     <style>
         :root {
             --font-main: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -114,20 +114,17 @@
         .file-card.selected { background: #cce8ff; border-color: #99d1ff; }
         .file-label { font-size: 11px; text-align: center; color: #1e1e1e; word-wrap: break-word; line-height: 1.2; margin-top: 4px; }
 
-        /* --- UPDATED POPUP WINDOWS WITH DEEP SHADOWS --- */
+        /* --- POPUP WINDOWS --- */
         #preview-window, #add-window, #del-window {
             position: absolute; top: 10%; left: 15%; width: 600px; height: 450px;
             background: rgba(245, 250, 255, 0.98);
             border-radius: 8px; 
             border: 1px solid rgba(0,0,0,0.4);
-            /* EXTREME SHADOW FOR REALISM */
-            box-shadow: 
-                0 20px 60px rgba(0,0,0,0.6), 
-                0 0 0 1px rgba(255,255,255,0.4) inset;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.4) inset;
             display: flex; flex-direction: column; z-index: 2000;
             backdrop-filter: blur(10px);
             transition: width 0.2s, height 0.2s, transform 0.2s, opacity 0.2s;
-            touch-action: none; /* DRAG ANYWHERE */
+            touch-action: none;
         }
         
         #add-window, #del-window { width: 400px; height: auto; }
@@ -149,26 +146,37 @@
         .win-btn:hover { background: #eaf6fd; border-color: #3c7fb1; }
         .win-btn.close-btn:hover { background: #e81123; color: white; border-color: #b00b1a; box-shadow: none; }
 
-        .popup-body {
-            padding: 15px; background: #f0f0f0; flex-grow: 1;
-            font-size: 13px; border-radius: 0 0 8px 8px;
-        }
+        .popup-body { padding: 15px; background: #f0f0f0; flex-grow: 1; font-size: 13px; border-radius: 0 0 8px 8px; }
+        
         .popup-content-view {
             width: 100%; height: 100%; background: #000; 
             display: flex; justify-content: center; align-items: center; overflow: hidden;
+            position: relative;
         }
 
-        .maximized {
-            top: 0 !important; left: 0 !important; width: 100% !important; height: calc(100% - 40px) !important;
-            border-radius: 0 !important; border: none !important;
+        /* --- BLOW OVERLAY --- */
+        #blow-prompt {
+            position: absolute;
+            background: rgba(0, 0, 0, 0.7);
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 14px;
+            border: 1px solid #00f2ff;
+            box-shadow: 0 0 15px #00f2ff;
+            pointer-events: none;
+            z-index: 3000;
+            animation: pulse 1.5s infinite;
         }
+
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+
+        .maximized { top: 0 !important; left: 0 !important; width: 100% !important; height: calc(100% - 40px) !important; border-radius: 0 !important; border: none !important; }
         .minimized { transform: scale(0.5) translateY(100vh); opacity: 0; pointer-events: none; }
-
-        .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; margin-bottom: 4px; color: #333; font-weight: bold; }
-        .form-group input, .form-group select { width: 100%; padding: 6px; border: 1px solid #7d8ea6; border-radius: 2px; }
-        .btn-win { padding: 6px 20px; border: 1px solid #707070; background: linear-gradient(to bottom, #f2f2f2, #ebebeb); cursor: pointer; border-radius: 3px; }
-        .btn-win:active { background: #cce4f7; }
 
         /* --- TASKBAR --- */
         #taskbar {
@@ -193,7 +201,6 @@
             color: white; font-size: 11px;
         }
         .task-item.active { background: rgba(255,255,255,0.25); border-color:rgba(255,255,255,0.6); }
-
         .tray-area { margin-left: auto; display: flex; align-items: center; gap: 12px; padding-right: 15px; color: white; font-size: 12px; }
 
     </style>
@@ -280,28 +287,20 @@
                 <div class="win-btn close-btn" onclick="closePreview()">×</div>
             </div>
         </div>
-        <div class="popup-content-view" id="prev-content"></div>
+        <div class="popup-content-view" id="prev-content">
+            </div>
+        <div id="blow-prompt" class="hidden" style="left:50%; top:50%; transform:translate(-50%, -50%);">Blow on the screen!</div>
     </div>
 
     <div id="add-window" class="hidden">
         <div class="popup-header"><span>Create New File</span><span style="cursor:pointer; padding: 0 10px;" onclick="closeAddModal()">×</span></div>
         <div class="popup-body">
-            <div class="form-group">
-                <label>File Name:</label>
-                <input type="text" id="inp-name" value="MyVideo.mp4">
-            </div>
+            <div class="form-group"><label>File Name:</label><input type="text" id="inp-name" value="MyVideo.mp4"></div>
             <div class="form-group">
                 <label>Type:</label>
-                <select id="inp-type">
-                    <option value="video">Video URL</option>
-                    <option value="code">Code / Text</option>
-                    <option value="img">Image URL</option>
-                </select>
+                <select id="inp-type"><option value="video">Video URL</option><option value="code">Code / Text</option><option value="img">Image URL</option></select>
             </div>
-            <div class="form-group">
-                <label>Content / Source URL:</label>
-                <input type="text" id="inp-src" placeholder="http://...">
-            </div>
+            <div class="form-group"><label>Content / Source URL:</label><input type="text" id="inp-src" placeholder="http://..."></div>
             <div style="text-align:right; margin-top:15px;">
                 <button class="btn-win" onclick="saveFile()">Create</button>
                 <button class="btn-win" onclick="closeAddModal()">Cancel</button>
@@ -335,22 +334,25 @@
 
     <script>
         let fileSystem = {
-    'Pictures': [
-        { id: 1, name: 'Mountain.jpg', type: 'img', src: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=500', icon: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=100' },
-        { id: 2, name: 'n.jpg', type: 'img', src: 'n.jpg', icon: 'n.jpg' } // Added your image here
-    ],
-    'Videos': [
-        { id: 10, name: 'BigBuckBunny.mp4', type: 'video', src: 'https://www.w3schools.com/html/mov_bbb.mp4', icon: 'https://img.icons8.com/color/48/video-file.png' },
-        { id: 11, name: 'indu.mp4', type: 'video', src: 'indu.mp4', icon: 'https://img.icons8.com/color/48/video-file.png' } // Added your n1.mp4 here
-    ],
-    'Music': [{ id: 3, name: 'Track01.mp3', type: 'mp3', icon: 'https://img.icons8.com/color/48/audio-file.png' }],
-    'Desktop': [{ id: 4, name: 'ToDo.txt', type: 'code', src: '1. Buy Milk\n2. Code Windows Sim', icon: 'https://img.icons8.com/color/48/txt.png' }],
-    'Downloads': [],
-    'Recycle Bin': []
-};
-
+            'Pictures': [
+                { id: 1, name: 'Mountain.jpg', type: 'img', src: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=500', icon: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=100' },
+                { id: 2, name: 'n.jpg', type: 'img', src: 'n.jpg', icon: 'n.jpg' }
+            ],
+            'Videos': [
+                { id: 99, name: 'bday.mp4', type: 'video', src: 'bday.mp4', icon: 'https://img.icons8.com/color/48/birthday-cake.png' },
+                { id: 10, name: 'BigBuckBunny.mp4', type: 'video', src: 'https://www.w3schools.com/html/mov_bbb.mp4', icon: 'https://img.icons8.com/color/48/video-file.png' },
+                { id: 11, name: 'indu.mp4', type: 'video', src: 'indu.mp4', icon: 'https://img.icons8.com/color/48/video-file.png' }
+            ],
+            'Music': [{ id: 3, name: 'Track01.mp3', type: 'mp3', icon: 'https://img.icons8.com/color/48/audio-file.png' }],
+            'Desktop': [{ id: 4, name: 'ToDo.txt', type: 'code', src: '1. Buy Milk\n2. Code Windows Sim', icon: 'https://img.icons8.com/color/48/txt.png' }],
+            'Downloads': [],
+            'Recycle Bin': []
+        };
 
         let currentFolder = 'Pictures', deleteTargetId = null, activeFile = null;
+        let micStream, audioContext, analyser, dataArray;
+        let isWaitingForBlow = false;
+        let hasTriggeredForThisPass = false; // Internal flag for the video logic
 
         function nav(folder) {
             currentFolder = folder;
@@ -378,19 +380,96 @@
             });
         }
 
+        async function initMic() {
+            if (audioContext) return;
+            try {
+                micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createMediaStreamSource(micStream);
+                analyser = audioContext.createAnalyser();
+                analyser.fftSize = 256;
+                source.connect(analyser);
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+                checkAudio();
+            } catch (e) { console.log("Mic access denied"); }
+        }
+
+        function checkAudio() {
+            if (isWaitingForBlow) {
+                analyser.getByteFrequencyData(dataArray);
+                let sum = 0;
+                for (let i = 0; i < 20; i++) sum += dataArray[i];
+                let avg = sum / 20;
+                
+                // --- SENSITIVITY SET TO 50 ---
+                if (avg > 50) { 
+                    const video = document.getElementById('active-video');
+                    if (video) {
+                        isWaitingForBlow = false;
+                        document.getElementById('blow-prompt').classList.add('hidden');
+                        video.play();
+                    }
+                }
+            }
+            requestAnimationFrame(checkAudio);
+        }
+
         function openPreview(file) {
             activeFile = file;
+            initMic();
             const win = document.getElementById('preview-window');
             const content = document.getElementById('prev-content');
+            const prompt = document.getElementById('blow-prompt');
+            
             document.getElementById('prev-title').innerText = file.name;
             win.classList.remove('hidden'); win.classList.remove('minimized'); win.style.display = 'flex';
+            prompt.classList.add('hidden'); // Reset prompt
+            
+            hasTriggeredForThisPass = false; // Reset video logic flag
+            isWaitingForBlow = false;
+
             if(file.type === 'img') content.innerHTML = `<img src="${file.src}" style="max-width:100%; max-height:100%;">`;
-            else if(file.type === 'video') content.innerHTML = `<video src="${file.src}" controls autoplay style="width:100%; height:100%;"></video>`;
+            else if(file.type === 'video') {
+                content.innerHTML = `<video id="active-video" src="${file.src}" controls autoplay style="width:100%; height:100%;"></video>`;
+                
+                const video = document.getElementById('active-video');
+                
+                if(file.name === 'bday.mp4') {
+                    video.addEventListener('timeupdate', () => {
+                        // RESET LOGIC: If user seeks back before 4s, allow it to trigger again
+                        if (video.currentTime < 3.8) {
+                            hasTriggeredForThisPass = false;
+                            // Also hide prompt if it was showing
+                            if (!video.paused) {
+                                prompt.classList.add('hidden');
+                                isWaitingForBlow = false;
+                            }
+                        }
+
+                        // PAUSE LOGIC: Trigger exactly at 4s if not already triggered
+                        if (video.currentTime >= 4 && !hasTriggeredForThisPass && !video.paused) {
+                            video.pause();
+                            hasTriggeredForThisPass = true;
+                            isWaitingForBlow = true;
+                            prompt.classList.remove('hidden');
+                        }
+                    });
+                }
+            }
             else content.innerHTML = `<textarea style="width:100%; height:100%; background:#222; color:#0f0; border:none; padding:10px; font-family:monospace;">${file.src || ""}</textarea>`;
             updateTaskbar();
         }
 
-        function closePreview() { document.getElementById('preview-window').classList.add('hidden'); document.getElementById('prev-content').innerHTML = ""; activeFile = null; updateTaskbar(); }
+        function closePreview() { 
+            document.getElementById('preview-window').classList.add('hidden'); 
+            document.getElementById('prev-content').innerHTML = ""; 
+            document.getElementById('blow-prompt').classList.add('hidden');
+            activeFile = null; 
+            isWaitingForBlow = false;
+            hasTriggeredForThisPass = false;
+            updateTaskbar(); 
+        }
+        
         function toggleMinimize() { document.getElementById('preview-window').classList.toggle('minimized'); updateTaskbar(); }
         function toggleMaximize() { document.getElementById('preview-window').classList.toggle('maximized'); }
 
@@ -401,54 +480,37 @@
             container.innerHTML = `<div class="task-item ${!isMin ? 'active' : ''}" onclick="document.getElementById('preview-window').classList.remove('minimized'); updateTaskbar();"><img src="${activeFile.icon}" class="icon-16"><span>${activeFile.name}</span></div>`;
         }
 
-        /* --- FIXED PRO DRAG LOGIC: DRAG BY CLICKING ANYWHERE --- */
         makeDraggable(document.getElementById('preview-window'));
         makeDraggable(document.getElementById('add-window'));
         makeDraggable(document.getElementById('del-window'));
 
         function makeDraggable(element) {
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-            
-            // Drag on ANY part of the window
             element.onmousedown = dragStart;
             element.ontouchstart = dragStart;
 
             function dragStart(e) {
-                // DON'T drag if clicking an input, button, or textarea
                 const tag = e.target.tagName.toLowerCase();
                 if(['input', 'button', 'select', 'textarea', 'video'].includes(tag) || e.target.closest('.win-controls')) return;
-
                 if(element.classList.contains('maximized')) return;
-                
                 const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
                 const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
-
-                pos3 = clientX;
-                pos4 = clientY;
-                
-                document.onmouseup = closeDrag;
-                document.onmousemove = elementDrag;
-                document.ontouchend = closeDrag;
-                document.ontouchmove = elementDrag;
+                pos3 = clientX; pos4 = clientY;
+                document.onmouseup = closeDrag; document.onmousemove = elementDrag;
+                document.ontouchend = closeDrag; document.ontouchmove = elementDrag;
             }
 
             function elementDrag(e) {
                 if (e.cancelable) e.preventDefault();
                 const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
                 const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
-
-                pos1 = pos3 - clientX;
-                pos2 = pos4 - clientY;
-                pos3 = clientX;
-                pos4 = clientY;
+                pos1 = pos3 - clientX; pos2 = pos4 - clientY;
+                pos3 = clientX; pos4 = clientY;
                 element.style.top = (element.offsetTop - pos2) + "px";
                 element.style.left = (element.offsetLeft - pos1) + "px";
             }
 
-            function closeDrag() {
-                document.onmouseup = null; document.onmousemove = null;
-                document.ontouchend = null; document.ontouchmove = null;
-            }
+            function closeDrag() { document.onmouseup = null; document.onmousemove = null; document.ontouchend = null; document.ontouchmove = null; }
         }
 
         function filterFiles() {
@@ -485,6 +547,8 @@
             fileSystem[currentFolder].push({ id: Date.now(), name, type, src, icon: type === 'video' ? 'https://img.icons8.com/color/48/video-file.png' : (type==='img'?src:'https://img.icons8.com/color/48/file.png') });
             closeAddModal(); render();
         }
+
+        function emptyBin() { fileSystem['Recycle Bin'] = []; render(); }
 
         setInterval(() => { const d = new Date(); document.getElementById('clock').innerText = `${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`; }, 1000);
         nav('Pictures');
