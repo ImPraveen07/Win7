@@ -251,6 +251,9 @@
                 <div class="tree-item indent-1 group-title" style="margin-top:10px;">
                     <img src="https://img.icons8.com/color/48/books.png" class="icon-16"> <span style="margin-left:5px">Libraries</span>
                 </div>
+                <div class="tree-item indent-2" id="node-Documents" onclick="nav('Documents')">
+                    <img src="https://img.icons8.com/color/48/opened-folder.png" class="icon-16"> <span style="margin-left:5px">Documents</span>
+                </div>
                 <div class="tree-item indent-2 active" id="node-Pictures" onclick="nav('Pictures')">
                     <img src="https://img.icons8.com/color/48/image-file.png" class="icon-16"> <span style="margin-left:5px">Pictures</span>
                 </div>
@@ -288,19 +291,29 @@
             </div>
         </div>
         <div class="popup-content-view" id="prev-content">
-            </div>
-        <div id="blow-prompt" class="hidden" style="left:50%; top:50%; transform:translate(-50%, -50%);">Blow on the screen!</div>
+             <div id="blow-prompt" class="hidden">Blow on the screen!</div>
+        </div>
     </div>
 
     <div id="add-window" class="hidden">
         <div class="popup-header"><span>Create New File</span><span style="cursor:pointer; padding: 0 10px;" onclick="closeAddModal()">×</span></div>
         <div class="popup-body">
-            <div class="form-group"><label>File Name:</label><input type="text" id="inp-name" value="MyVideo.mp4"></div>
+            <div class="form-group">
+                <label>File Name:</label>
+                <input type="text" id="inp-name" value="MyVideo.mp4">
+            </div>
             <div class="form-group">
                 <label>Type:</label>
-                <select id="inp-type"><option value="video">Video URL</option><option value="code">Code / Text</option><option value="img">Image URL</option></select>
+                <select id="inp-type">
+                    <option value="video">Video URL</option>
+                    <option value="code">Code / Text</option>
+                    <option value="img">Image URL</option>
+                </select>
             </div>
-            <div class="form-group"><label>Content / Source URL:</label><input type="text" id="inp-src" placeholder="http://..."></div>
+            <div class="form-group">
+                <label>Content / Source URL:</label>
+                <input type="text" id="inp-src" placeholder="http://...">
+            </div>
             <div style="text-align:right; margin-top:15px;">
                 <button class="btn-win" onclick="saveFile()">Create</button>
                 <button class="btn-win" onclick="closeAddModal()">Cancel</button>
@@ -334,6 +347,15 @@
 
     <script>
         let fileSystem = {
+            'Documents': [
+                { 
+                    id: 101, 
+                    name: 'indu bird.html', 
+                    type: 'iframe', 
+                    src: 'https://impraveen07.github.io/indubird/', 
+                    icon: 'https://img.icons8.com/color/48/html-5--v1.png' 
+                }
+            ],
             'Pictures': [
                 { id: 1, name: 'Mountain.jpg', type: 'img', src: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=500', icon: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=100' },
                 { id: 2, name: 'n.jpg', type: 'img', src: 'n.jpg', icon: 'n.jpg' }
@@ -352,7 +374,6 @@
         let currentFolder = 'Pictures', deleteTargetId = null, activeFile = null;
         let micStream, audioContext, analyser, dataArray;
         let isWaitingForBlow = false;
-        let hasTriggeredForThisPass = false; // Internal flag for the video logic
 
         function nav(folder) {
             currentFolder = folder;
@@ -400,9 +421,7 @@
                 let sum = 0;
                 for (let i = 0; i < 20; i++) sum += dataArray[i];
                 let avg = sum / 20;
-                
-                // --- SENSITIVITY SET TO 50 ---
-                if (avg > 40) { 
+                if (avg > 50) { 
                     const video = document.getElementById('active-video');
                     if (video) {
                         isWaitingForBlow = false;
@@ -419,39 +438,28 @@
             initMic();
             const win = document.getElementById('preview-window');
             const content = document.getElementById('prev-content');
-            const prompt = document.getElementById('blow-prompt');
-            
             document.getElementById('prev-title').innerText = file.name;
             win.classList.remove('hidden'); win.classList.remove('minimized'); win.style.display = 'flex';
-            prompt.classList.add('hidden'); // Reset prompt
             
-            hasTriggeredForThisPass = false; // Reset video logic flag
-            isWaitingForBlow = false;
-
             if(file.type === 'img') content.innerHTML = `<img src="${file.src}" style="max-width:100%; max-height:100%;">`;
+            else if(file.type === 'iframe') {
+                content.innerHTML = `<iframe src="${file.src}" style="width:100%; height:100%; border:none; background:white;"></iframe>`;
+            }
             else if(file.type === 'video') {
-                content.innerHTML = `<video id="active-video" src="${file.src}" controls autoplay style="width:100%; height:100%;"></video>`;
-                
+                content.innerHTML = `
+                    <div id="blow-prompt" class="hidden">Blow on the screen!</div>
+                    <video id="active-video" src="${file.src}" controls autoplay style="width:100%; height:100%;"></video>
+                `;
                 const video = document.getElementById('active-video');
-                
                 if(file.name === 'bday.mp4') {
+                    let hasPausedAtFour = false; 
                     video.addEventListener('timeupdate', () => {
-                        // RESET LOGIC: If user seeks back before 4s, allow it to trigger again
-                        if (video.currentTime < 3.8) {
-                            hasTriggeredForThisPass = false;
-                            // Also hide prompt if it was showing
-                            if (!video.paused) {
-                                prompt.classList.add('hidden');
-                                isWaitingForBlow = false;
-                            }
-                        }
-
-                        // PAUSE LOGIC: Trigger exactly at 4s if not already triggered
-                        if (video.currentTime >= 4 && !hasTriggeredForThisPass && !video.paused) {
+                        if (video.currentTime < 3) hasPausedAtFour = false;
+                        if (video.currentTime >= 4 && !hasPausedAtFour && !video.paused) {
                             video.pause();
-                            hasTriggeredForThisPass = true;
+                            hasPausedAtFour = true; 
                             isWaitingForBlow = true;
-                            prompt.classList.remove('hidden');
+                            document.getElementById('blow-prompt').classList.remove('hidden');
                         }
                     });
                 }
@@ -463,10 +471,8 @@
         function closePreview() { 
             document.getElementById('preview-window').classList.add('hidden'); 
             document.getElementById('prev-content').innerHTML = ""; 
-            document.getElementById('blow-prompt').classList.add('hidden');
             activeFile = null; 
             isWaitingForBlow = false;
-            hasTriggeredForThisPass = false;
             updateTaskbar(); 
         }
         
@@ -488,10 +494,9 @@
             let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
             element.onmousedown = dragStart;
             element.ontouchstart = dragStart;
-
             function dragStart(e) {
                 const tag = e.target.tagName.toLowerCase();
-                if(['input', 'button', 'select', 'textarea', 'video'].includes(tag) || e.target.closest('.win-controls')) return;
+                if(['input', 'button', 'select', 'textarea', 'video', 'iframe'].includes(tag) || e.target.closest('.win-controls')) return;
                 if(element.classList.contains('maximized')) return;
                 const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
                 const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
@@ -499,9 +504,7 @@
                 document.onmouseup = closeDrag; document.onmousemove = elementDrag;
                 document.ontouchend = closeDrag; document.ontouchmove = elementDrag;
             }
-
             function elementDrag(e) {
-                if (e.cancelable) e.preventDefault();
                 const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
                 const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
                 pos1 = pos3 - clientX; pos2 = pos4 - clientY;
@@ -509,7 +512,6 @@
                 element.style.top = (element.offsetTop - pos2) + "px";
                 element.style.left = (element.offsetLeft - pos1) + "px";
             }
-
             function closeDrag() { document.onmouseup = null; document.onmousemove = null; document.ontouchend = null; document.ontouchmove = null; }
         }
 
