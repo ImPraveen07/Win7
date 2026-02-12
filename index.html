@@ -82,6 +82,7 @@
         .tool-btn:hover { background: #eaf6fd; border-color: #bce1fc; }
         .btn-add { font-weight: bold; color: #0066cc; }
         .btn-empty { color: red; display: none; }
+        .btn-bulk-del { color: #d11a2a; font-weight: bold; display: none; }
 
         .main-container { flex-grow: 1; display: flex; background: white; overflow: hidden; }
 
@@ -108,10 +109,14 @@
         .file-card {
             display: flex; flex-direction: column; align-items: center;
             padding: 5px; border: 1px solid transparent; border-radius: 3px; cursor: pointer;
-            position: relative;
+            position: relative; transition: background 0.1s;
         }
         .file-card:hover { background: #e8f5fd; border-color: #d9ebf9; }
-        .file-card.selected { background: #cce8ff; border-color: #99d1ff; }
+        .file-card.selected { 
+            background: #cce8ff !important; 
+            border: 1px solid #99d1ff !important; 
+            box-shadow: 0 0 0 1px #99d1ff;
+        }
         .file-label { font-size: 11px; text-align: center; color: #1e1e1e; word-wrap: break-word; line-height: 1.2; margin-top: 4px; }
 
         /* --- POPUP WINDOWS --- */
@@ -203,6 +208,7 @@
         .task-item.active { background: rgba(255,255,255,0.25); border-color:rgba(255,255,255,0.6); }
         .tray-area { margin-left: auto; display: flex; align-items: center; gap: 12px; padding-right: 15px; color: white; font-size: 12px; }
 
+        .btn-win { padding: 4px 12px; font-size: 12px; }
     </style>
 </head>
 <body>
@@ -230,8 +236,9 @@
 
         <div class="toolbar">
             <div class="tool-btn btn-add" onclick="openAddModal()">+ New Item</div>
+            <div class="tool-btn btn-bulk-del" id="btn-bulk-del" onclick="bulkDelete()">Delete Selected</div>
             <div class="tool-btn btn-empty" id="btn-empty" onclick="emptyBin()">Empty Recycle Bin</div>
-            <div class="tool-btn">Organize</div>
+            <div class="tool-btn" onclick="clearSelection()">Organize</div>
             <div class="tool-btn">Share with</div>
             <div class="tool-btn">Burn</div>
         </div>
@@ -277,6 +284,7 @@
 
         <div style="height:28px; background:#f5f6f7; border-top:1px solid #ddd; padding:0 10px; display:flex; align-items:center; color:#555; font-size:11px;">
             <span id="status-count">Items: 0</span>
+            <span id="selection-count" style="margin-left: 20px; font-weight: bold; color: var(--win-blue);"></span>
         </div>
     </div>
 
@@ -298,21 +306,17 @@
     <div id="add-window" class="hidden">
         <div class="popup-header"><span>Create New File</span><span style="cursor:pointer; padding: 0 10px;" onclick="closeAddModal()">×</span></div>
         <div class="popup-body">
-            <div class="form-group">
-                <label>File Name:</label>
-                <input type="text" id="inp-name" value="MyVideo.mp4">
-            </div>
-            <div class="form-group">
-                <label>Type:</label>
-                <select id="inp-type">
+            <div>
+                <label>File Name:</label><br>
+                <input type="text" id="inp-name" value="NewFile.html" style="width:100%"><br><br>
+                <label>Type:</label><br>
+                <select id="inp-type" style="width:100%">
+                    <option value="iframe">HTML / Iframe</option>
                     <option value="video">Video URL</option>
-                    <option value="code">Code / Text</option>
                     <option value="img">Image URL</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Content / Source URL:</label>
-                <input type="text" id="inp-src" placeholder="http://...">
+                </select><br><br>
+                <label>URL / Content:</label><br>
+                <input type="text" id="inp-src" style="width:100%">
             </div>
             <div style="text-align:right; margin-top:15px;">
                 <button class="btn-win" onclick="saveFile()">Create</button>
@@ -326,7 +330,7 @@
         <div class="popup-body">
             <div style="display:flex; align-items:center; gap:15px; padding-bottom:15px;">
                 <img src="https://img.icons8.com/color/48/trash.png">
-                <div>Are you sure you want to move <b id="del-name">file</b> to the Recycle Bin?</div>
+                <div id="del-prompt-text">Are you sure you want to move <b id="del-name">file</b> to the Recycle Bin?</div>
             </div>
             <div style="text-align:right;">
                 <button class="btn-win" onclick="confirmDelete()">Yes</button>
@@ -346,53 +350,53 @@
     </div>
 
     <script>
+        // --- DATA HUB ---
+        const autoPics = [];
+        for(let i=1; i<=89; i++) {
+            let ext = (i === 1) ? 'jpg' : 'png';
+            autoPics.push({ 
+                id: 500+i, 
+                name: i+'.'+ext, 
+                type: 'img', 
+                src: `https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/${i}.${ext}`, 
+                icon: `https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/${i}.${ext}` 
+            });
+        }
+
         let fileSystem = {
             'Documents': [
-                { 
-                    id: 101, 
-                    name: 'indu bird.html', 
-                    type: 'iframe', 
-                    src: 'https://impraveen07.github.io/indubird/', 
-                    icon: 'https://img.icons8.com/color/48/html-5--v1.png' 
-                },
-                          { 
-                    id: 102, 
-                    name: 'papperpuppet.html', 
-                    type: 'iframe', 
-                    src: 'https://impraveen07.github.io/Paperpuppet-/', 
-                    icon: 'https://img.icons8.com/color/48/html-5--v1.png' 
-                }
+                { id: 101, name: 'indu bird.html', type: 'iframe', src: 'https://impraveen07.github.io/indubird/', icon: 'https://img.icons8.com/color/48/html-5--v1.png' },
+                { id: 102, name: 'happyjeni.html', type: 'iframe', src: 'https://impraveen07.github.io/B--day/', icon: 'https://img.icons8.com/color/48/html-5--v1.png' },
+                { id: 103, name: 'papperpuppet.html', type: 'iframe', src: 'https://impraveen07.github.io/Paperpuppet-/', icon: 'https://img.icons8.com/color/48/html-5--v1.png' }
             ],
             'Pictures': [
                 { id: 1, name: 'Mountain.jpg', type: 'img', src: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=500', icon: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=100' },
-                { id: 2, name: 'n.jpg', type: 'img', src: 'n.jpg', icon: 'n.jpg' }
+                ...autoPics
             ],
             'Videos': [
                 { id: 9, name: 'bday.mp4', type: 'video', src: 'bday.mp4', icon: 'https://img.icons8.com/color/48/birthday-cake.png' },
                 { id: 10, name: 'photo grapher duckyy.mp4', type: 'video', src: 'photo grapher duckyy.mp4', icon: 'https://img.icons8.com/color/48/video-file.png' },
-                { id: 12, name: 'car.mp4', type: 'video', src: 'car.mp4', icon: 'https://img.icons8.com/color/48/video-file.png' },
-                { id: 13, name: 'car party.mp4', type: 'video', src: 'car party.mp4', icon: 'https://img.icons8.com/color/48/video-file.png' },
                 { id: 11, name: 'indu.mp4', type: 'video', src: 'indu.mp4', icon: 'https://img.icons8.com/color/48/video-file.png' }
             ],
-            'Music': [{ id: 3, name: 'Track01.mp3', type: 'mp3', icon: 'https://img.icons8.com/color/48/audio-file.png' },
-            {    id: 4, 
-                    name: 'totify.html', 
-                    type: 'iframe', 
-                    src: 'https://totify.netlify.app/', 
-                    icon: 'https://img.icons8.com/color/48/html-5--v1.png' 
-                }
-                 ],
+            'Music': [
+                { id: 3, name: 'Track01.mp3', type: 'mp3', icon: 'https://img.icons8.com/color/48/audio-file.png' },
+                { id: 4, name: 'totify.html', type: 'iframe', src: 'https://totify.netlify.app/', icon: 'https://img.icons8.com/color/48/html-5--v1.png' }
+            ],
             'Desktop': [{ id: 5, name: 'ToDo.txt', type: 'code', src: '1. Buy Milk\n2. Code Windows Sim', icon: 'https://img.icons8.com/color/48/txt.png' }],
             'Downloads': [],
             'Recycle Bin': []
         };
 
-        let currentFolder = 'Pictures', deleteTargetId = null, activeFile = null;
-        let micStream, audioContext, analyser, dataArray;
-        let isWaitingForBlow = false;
+        let currentFolder = 'Pictures', activeFile = null, deleteTargetId = null;
+        let isWaitingForBlow = false, audioContext, analyser, dataArray;
+        
+        // --- MULTI-SELECT STATE ---
+        let selectedIds = [];
+        let isSelectionMode = false;
 
         function nav(folder) {
             currentFolder = folder;
+            clearSelection();
             document.querySelectorAll('.tree-item').forEach(el => el.classList.remove('active'));
             let node = document.getElementById('node-' + folder);
             if(node) node.classList.add('active');
@@ -406,129 +410,218 @@
             grid.innerHTML = "";
             const files = customList || fileSystem[currentFolder] || [];
             document.getElementById('status-count').innerText = `Items: ${files.length}`;
+            
             files.forEach(file => {
                 const el = document.createElement('div');
                 el.className = 'file-card';
+                if (selectedIds.includes(file.id)) el.classList.add('selected');
+                
                 el.innerHTML = `<img src="${file.icon || 'https://img.icons8.com/color/48/file.png'}" class="icon-48"><div class="file-label">${file.name}</div>`;
-                el.onclick = () => { document.querySelectorAll('.file-card').forEach(c => c.classList.remove('selected')); el.classList.add('selected'); };
-                el.ondblclick = () => openPreview(file);
-                addLongPress(el, () => promptDelete(file));
+                
+                // --- CLICK LOGIC ---
+                el.onclick = () => {
+                    if (isSelectionMode) {
+                        toggleFileSelection(file.id);
+                    } else {
+                        openPreview(file);
+                    }
+                };
+
+                // --- LONG PRESS LOGIC (0.7s) ---
+                addLongPress(el, () => {
+                    if (!isSelectionMode) {
+                        isSelectionMode = true;
+                        toggleFileSelection(file.id);
+                    }
+                });
+                
                 grid.appendChild(el);
             });
+            updateSelectionUI();
         }
 
-        async function initMic() {
-            if (audioContext) return;
-            try {
-                micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                const source = audioContext.createMediaStreamSource(micStream);
-                analyser = audioContext.createAnalyser();
-                analyser.fftSize = 256;
-                source.connect(analyser);
-                dataArray = new Uint8Array(analyser.frequencyBinCount);
-                checkAudio();
-            } catch (e) { console.log("Mic access denied"); }
-        }
-
-        function checkAudio() {
-            if (isWaitingForBlow) {
-                analyser.getByteFrequencyData(dataArray);
-                let sum = 0;
-                for (let i = 0; i < 20; i++) sum += dataArray[i];
-                let avg = sum / 20;
-                if (avg > 50) { 
-                    const video = document.getElementById('active-video');
-                    if (video) {
-                        isWaitingForBlow = false;
-                        document.getElementById('blow-prompt').classList.add('hidden');
-                        video.play();
-                    }
-                }
+        function toggleFileSelection(id) {
+            const index = selectedIds.indexOf(id);
+            if (index > -1) {
+                selectedIds.splice(index, 1);
+            } else {
+                selectedIds.push(id);
             }
-            requestAnimationFrame(checkAudio);
+            if (selectedIds.length === 0) isSelectionMode = false;
+            render();
+        }
+
+        function clearSelection() {
+            selectedIds = [];
+            isSelectionMode = false;
+            render();
+        }
+
+        function updateSelectionUI() {
+            const btnBulk = document.getElementById('btn-bulk-del');
+            const selLabel = document.getElementById('selection-count');
+            if (selectedIds.length > 0) {
+                btnBulk.style.display = 'block';
+                selLabel.innerText = `${selectedIds.length} item(s) selected`;
+            } else {
+                btnBulk.style.display = 'none';
+                selLabel.innerText = '';
+            }
+        }
+
+        function bulkDelete() {
+            if (selectedIds.length === 0) return;
+            document.getElementById('del-prompt-text').innerHTML = `Are you sure you want to move <b>${selectedIds.length} items</b> to the Recycle Bin?`;
+            document.getElementById('del-window').classList.remove('hidden');
+            deleteTargetId = "BULK";
         }
 
         function openPreview(file) {
             activeFile = file;
-            initMic();
             const win = document.getElementById('preview-window');
             const content = document.getElementById('prev-content');
             document.getElementById('prev-title').innerText = file.name;
-            win.classList.remove('hidden'); win.classList.remove('minimized'); win.style.display = 'flex';
+            win.classList.remove('hidden', 'minimized'); win.style.display = 'flex';
             
             if(file.type === 'img') content.innerHTML = `<img src="${file.src}" style="max-width:100%; max-height:100%;">`;
-            else if(file.type === 'iframe') {
-                content.innerHTML = `<iframe src="${file.src}" style="width:100%; height:100%; border:none; background:white;"></iframe>`;
-            }
+            else if(file.type === 'iframe') content.innerHTML = `<iframe src="${file.src}" style="width:100%; height:100%; border:none; background:white;"></iframe>`;
             else if(file.type === 'video') {
-                content.innerHTML = `
-                    <div id="blow-prompt" class="hidden">Blow on the screen!</div>
-                    <video id="active-video" src="${file.src}" controls autoplay style="width:100%; height:100%;"></video>
-                `;
-                const video = document.getElementById('active-video');
-                if(file.name === 'bday.mp4') {
-                    let hasPausedAtFour = false; 
-                    video.addEventListener('timeupdate', () => {
-                        if (video.currentTime < 3) hasPausedAtFour = false;
-                        if (video.currentTime >= 4 && !hasPausedAtFour && !video.paused) {
-                            video.pause();
-                            hasPausedAtFour = true; 
-                            isWaitingForBlow = true;
-                            document.getElementById('blow-prompt').classList.remove('hidden');
-                        }
-                    });
-                }
+                content.innerHTML = `<div id="blow-prompt" class="hidden">Blow on the screen!</div><video id="active-video" src="${file.src}" controls autoplay style="width:100%; height:100%;"></video>`;
+                if(file.name === 'bday.mp4') setupBlowLogic();
             }
-            else content.innerHTML = `<textarea style="width:100%; height:100%; background:#222; color:#0f0; border:none; padding:10px; font-family:monospace;">${file.src || ""}</textarea>`;
+            else content.innerHTML = `<textarea style="width:100%; height:100%; padding:10px;">${file.src || ""}</textarea>`;
+            
             updateTaskbar();
         }
 
+        // --- BLOW LOGIC ---
+        function setupBlowLogic() {
+            const video = document.getElementById('active-video');
+            video.ontimeupdate = () => {
+                if(video.currentTime >= 4 && !isWaitingForBlow) {
+                    video.pause();
+                    isWaitingForBlow = true;
+                    document.getElementById('blow-prompt').classList.remove('hidden');
+                    initMic();
+                }
+            };
+        }
+
+        async function initMic() {
+            if (!audioContext) {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                audioContext = new AudioContext();
+                const source = audioContext.createMediaStreamSource(stream);
+                analyser = audioContext.createAnalyser();
+                source.connect(analyser);
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+            }
+            checkMic();
+        }
+
+        function checkMic() {
+            if (!isWaitingForBlow) return;
+            analyser.getByteFrequencyData(dataArray);
+            let sum = dataArray.reduce((a, b) => a + b, 0);
+            if ((sum / dataArray.length) > 45) {
+                isWaitingForBlow = false;
+                document.getElementById('blow-prompt').classList.add('hidden');
+                document.getElementById('active-video').play();
+            } else {
+                requestAnimationFrame(checkMic);
+            }
+        }
+
+        // --- WINDOW MGMT ---
+        function toggleMinimize() { 
+            const win = document.getElementById('preview-window');
+            win.classList.toggle('minimized');
+            updateTaskbar();
+        }
+        function toggleMaximize() { document.getElementById('preview-window').classList.toggle('maximized'); }
         function closePreview() { 
             document.getElementById('preview-window').classList.add('hidden'); 
-            document.getElementById('prev-content').innerHTML = ""; 
             activeFile = null; 
-            isWaitingForBlow = false;
             updateTaskbar(); 
         }
-        
-        function toggleMinimize() { document.getElementById('preview-window').classList.toggle('minimized'); updateTaskbar(); }
-        function toggleMaximize() { document.getElementById('preview-window').classList.toggle('maximized'); }
 
         function updateTaskbar() {
             const container = document.getElementById('taskbar-apps');
-            if(!activeFile) { container.innerHTML = ''; return; }
+            container.innerHTML = '';
+            if(!activeFile) return;
             const isMin = document.getElementById('preview-window').classList.contains('minimized');
-            container.innerHTML = `<div class="task-item ${!isMin ? 'active' : ''}" onclick="document.getElementById('preview-window').classList.remove('minimized'); updateTaskbar();"><img src="${activeFile.icon}" class="icon-16"><span>${activeFile.name}</span></div>`;
+            const item = document.createElement('div');
+            item.className = `task-item ${!isMin ? 'active' : ''}`;
+            item.innerHTML = `<img src="${activeFile.icon}" class="icon-16"><span>${activeFile.name}</span>`;
+            item.onclick = toggleMinimize;
+            container.appendChild(item);
+        }
+
+        // --- DRAG LOGIC ---
+        function makeDraggable(element) {
+            let p1 = 0, p2 = 0, p3 = 0, p4 = 0;
+            element.onmousedown = element.ontouchstart = dragStart;
+
+            function dragStart(e) {
+                const tag = e.target.tagName.toLowerCase();
+                if(['input', 'button', 'select', 'textarea', 'video', 'iframe'].includes(tag) || e.target.closest('.win-controls')) return;
+                
+                const cx = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+                const cy = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+                p3 = cx; p4 = cy;
+                
+                document.onmousemove = document.ontouchmove = elementDrag;
+                document.onmouseup = document.ontouchend = closeDrag;
+            }
+
+            function elementDrag(e) {
+                const cx = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+                const cy = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+                p1 = p3 - cx; p2 = p4 - cy;
+                p3 = cx; p4 = cy;
+                element.style.top = (element.offsetTop - p2) + "px";
+                element.style.left = (element.offsetLeft - p1) + "px";
+            }
+
+            function closeDrag() { document.onmousemove = document.ontouchmove = null; }
         }
 
         makeDraggable(document.getElementById('preview-window'));
         makeDraggable(document.getElementById('add-window'));
         makeDraggable(document.getElementById('del-window'));
 
-        function makeDraggable(element) {
-            let pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-            element.onmousedown = dragStart;
-            element.ontouchstart = dragStart;
-            function dragStart(e) {
-                const tag = e.target.tagName.toLowerCase();
-                if(['input', 'button', 'select', 'textarea', 'video', 'iframe'].includes(tag) || e.target.closest('.win-controls')) return;
-                if(element.classList.contains('maximized')) return;
-                const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
-                const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
-                pos3 = clientX; pos4 = clientY;
-                document.onmouseup = closeDrag; document.onmousemove = elementDrag;
-                document.ontouchend = closeDrag; document.ontouchmove = elementDrag;
+        // --- UTILS ---
+        function addLongPress(el, action) {
+            let timer;
+            el.addEventListener('mousedown', () => timer = setTimeout(action, 700));
+            el.addEventListener('touchstart', () => timer = setTimeout(action, 700));
+            el.addEventListener('mouseup', () => clearTimeout(timer));
+            el.addEventListener('touchend', () => clearTimeout(timer));
+        }
+
+        function confirmDelete() { 
+            const list = fileSystem[currentFolder];
+            
+            if (deleteTargetId === "BULK") {
+                // Delete all selected files
+                selectedIds.forEach(id => {
+                    const idx = list.findIndex(f => f.id === id);
+                    if (idx > -1) {
+                        const item = list.splice(idx, 1)[0];
+                        if (currentFolder !== 'Recycle Bin') fileSystem['Recycle Bin'].push(item);
+                    }
+                });
+                clearSelection();
+            } else if (deleteTargetId) {
+                // Single file delete (fallback)
+                const idx = list.findIndex(f => f.id === deleteTargetId);
+                if(idx > -1) {
+                    const item = list.splice(idx, 1)[0];
+                    if(currentFolder !== 'Recycle Bin') fileSystem['Recycle Bin'].push(item);
+                }
             }
-            function elementDrag(e) {
-                const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
-                const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
-                pos1 = pos3 - clientX; pos2 = pos4 - clientY;
-                pos3 = clientX; pos4 = clientY;
-                element.style.top = (element.offsetTop - pos2) + "px";
-                element.style.left = (element.offsetLeft - pos1) + "px";
-            }
-            function closeDrag() { document.onmouseup = null; document.onmousemove = null; document.ontouchend = null; document.ontouchmove = null; }
+            closeDelModal(); 
+            render();
         }
 
         function filterFiles() {
@@ -536,39 +629,25 @@
             render(fileSystem[currentFolder].filter(f => f.name.toLowerCase().includes(query)));
         }
 
-        function addLongPress(el, action) {
-            let timer;
-            el.addEventListener('mousedown', () => timer = setTimeout(action, 800));
-            el.addEventListener('touchstart', () => timer = setTimeout(action, 800));
-            el.addEventListener('mouseup', () => clearTimeout(timer));
-            el.addEventListener('touchend', () => clearTimeout(timer));
-        }
-
-        function promptDelete(file) { deleteTargetId = file.id; document.getElementById('del-name').innerText = file.name; document.getElementById('del-window').classList.remove('hidden'); }
-        function confirmDelete() { 
-            const list = fileSystem[currentFolder];
-            const idx = list.findIndex(f => f.id === deleteTargetId);
-            if(idx > -1) {
-                if(currentFolder !== 'Recycle Bin') fileSystem['Recycle Bin'].push(list.splice(idx, 1)[0]);
-                else list.splice(idx, 1);
-            }
-            closeDelModal(); render();
-        }
         function closeDelModal() { document.getElementById('del-window').classList.add('hidden'); }
         function openAddModal() { document.getElementById('add-window').classList.remove('hidden'); }
         function closeAddModal() { document.getElementById('add-window').classList.add('hidden'); }
+        
         function saveFile() {
             const name = document.getElementById('inp-name').value;
             const type = document.getElementById('inp-type').value;
             const src = document.getElementById('inp-src').value;
-            if(!name) return;
-            fileSystem[currentFolder].push({ id: Date.now(), name, type, src, icon: type === 'video' ? 'https://img.icons8.com/color/48/video-file.png' : (type==='img'?src:'https://img.icons8.com/color/48/file.png') });
+            fileSystem[currentFolder].push({ id: Date.now(), name, type, src, icon: 'https://img.icons8.com/color/48/file.png' });
             closeAddModal(); render();
         }
-
+        
         function emptyBin() { fileSystem['Recycle Bin'] = []; render(); }
 
-        setInterval(() => { const d = new Date(); document.getElementById('clock').innerText = `${d.getHours()}:${String(d.getMinutes()).padStart(2,'0')}`; }, 1000);
+        setInterval(() => { 
+            const d = new Date(); 
+            document.getElementById('clock').innerText = d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0'); 
+        }, 1000);
+        
         nav('Pictures');
     </script>
 </body>
