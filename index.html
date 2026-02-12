@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Windows 7 Ultimate - Blow Edition</title>
+    <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
     <style>
         :root {
             --font-main: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -159,20 +160,27 @@
             position: relative;
         }
 
-        /* --- BLOW OVERLAY --- */
-        #blow-prompt {
+        #active-video, model-viewer {
+            width: 100%; height: 100%;
+            pointer-events: auto;
+        }
+
+        /* --- OVERLAYS --- */
+        #blow-prompt, #quiet-prompt {
             position: absolute;
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.85);
             color: #fff;
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-size: 14px;
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-size: 15px;
             border: 1px solid #00f2ff;
-            box-shadow: 0 0 15px #00f2ff;
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.5);
             pointer-events: none;
             z-index: 3000;
-            animation: pulse 1.5s infinite;
+            text-align: center;
         }
+
+        #blow-prompt { animation: pulse 1.5s infinite; }
 
         @keyframes pulse {
             0% { transform: scale(1); opacity: 0.8; }
@@ -261,11 +269,14 @@
                 <div class="tree-item indent-2" id="node-Documents" onclick="nav('Documents')">
                     <img src="https://img.icons8.com/color/48/opened-folder.png" class="icon-16"> <span style="margin-left:5px">Documents</span>
                 </div>
-                <div class="tree-item indent-2 active" id="node-Pictures" onclick="nav('Pictures')">
+                <div class="tree-item indent-2" id="node-Pictures" onclick="nav('Pictures')">
                     <img src="https://img.icons8.com/color/48/image-file.png" class="icon-16"> <span style="margin-left:5px">Pictures</span>
                 </div>
                 <div class="tree-item indent-2" id="node-Videos" onclick="nav('Videos')">
                     <img src="https://img.icons8.com/color/48/video-file.png" class="icon-16"> <span style="margin-left:5px">Videos</span>
+                </div>
+                <div class="tree-item indent-2" id="node-Models" onclick="nav('Models')">
+                    <img src="https://img.icons8.com/color/48/3d-model.png" class="icon-16"> <span style="margin-left:5px">Models</span>
                 </div>
                 <div class="tree-item indent-2" id="node-Music" onclick="nav('Music')">
                     <img src="https://img.icons8.com/color/48/musical-notes.png" class="icon-16"> <span style="margin-left:5px">Music</span>
@@ -289,7 +300,7 @@
     </div>
 
     <div id="preview-window" class="hidden">
-        <div class="popup-header">
+        <div class="popup-header" id="preview-header">
             <img src="https://img.icons8.com/color/48/opened-folder.png" style="width:16px; margin-right:5px;">
             <span id="prev-title" style="flex-grow:1; font-weight:bold; text-shadow:0 1px 0 rgba(255,255,255,0.8);">Preview</span>
             <div class="win-controls">
@@ -299,12 +310,13 @@
             </div>
         </div>
         <div class="popup-content-view" id="prev-content">
+             <div id="quiet-prompt" class="hidden">Goto a quiet place...</div>
              <div id="blow-prompt" class="hidden">Blow on the screen!</div>
         </div>
     </div>
 
     <div id="add-window" class="hidden">
-        <div class="popup-header"><span>Create New File</span><span style="cursor:pointer; padding: 0 10px;" onclick="closeAddModal()">×</span></div>
+        <div class="popup-header" id="add-header"><span>Create New File</span><span style="cursor:pointer; padding: 0 10px;" onclick="closeAddModal()">×</span></div>
         <div class="popup-body">
             <div>
                 <label>File Name:</label><br>
@@ -314,6 +326,7 @@
                     <option value="iframe">HTML / Iframe</option>
                     <option value="video">Video URL</option>
                     <option value="img">Image URL</option>
+                    <option value="model">3D Model (.glb)</option>
                 </select><br><br>
                 <label>URL / Content:</label><br>
                 <input type="text" id="inp-src" style="width:100%">
@@ -326,7 +339,7 @@
     </div>
 
     <div id="del-window" class="hidden">
-        <div class="popup-header"><span>Delete File</span></div>
+        <div class="popup-header" id="del-header"><span>Delete File</span></div>
         <div class="popup-body">
             <div style="display:flex; align-items:center; gap:15px; padding-bottom:15px;">
                 <img src="https://img.icons8.com/color/48/trash.png">
@@ -378,6 +391,10 @@
                 { id: 10, name: 'photo grapher duckyy.mp4', type: 'video', src: 'photo grapher duckyy.mp4', icon: 'https://img.icons8.com/color/48/video-file.png' },
                 { id: 11, name: 'indu.mp4', type: 'video', src: 'indu.mp4', icon: 'https://img.icons8.com/color/48/video-file.png' }
             ],
+            'Models': [
+                { id: 201, name: 'textured.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/textured.glb', icon: 'https://img.icons8.com/color/48/3d-model.png' },
+                { id: 202, name: 'teddy.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/teddy.glb', icon: 'https://img.icons8.com/color/48/3d-model.png' }
+            ],
             'Music': [
                 { id: 3, name: 'Track01.mp3', type: 'mp3', icon: 'https://img.icons8.com/color/48/audio-file.png' },
                 { id: 4, name: 'totify.html', type: 'iframe', src: 'https://totify.netlify.app/', icon: 'https://img.icons8.com/color/48/html-5--v1.png' }
@@ -389,14 +406,11 @@
 
         let currentFolder = 'Pictures', activeFile = null, deleteTargetId = null;
         let isWaitingForBlow = false, audioContext, analyser, dataArray;
-        
-        // --- MULTI-SELECT STATE ---
-        let selectedIds = [];
-        let isSelectionMode = false;
+        let selectedIds = [], isSelectionMode = false;
+        let blowPromptUsed = false;
 
         function nav(folder) {
-            currentFolder = folder;
-            clearSelection();
+            currentFolder = folder; clearSelection();
             document.querySelectorAll('.tree-item').forEach(el => el.classList.remove('active'));
             let node = document.getElementById('node-' + folder);
             if(node) node.classList.add('active');
@@ -406,35 +420,16 @@
         }
 
         function render(customList = null) {
-            const grid = document.getElementById('file-grid');
-            grid.innerHTML = "";
+            const grid = document.getElementById('file-grid'); grid.innerHTML = "";
             const files = customList || fileSystem[currentFolder] || [];
             document.getElementById('status-count').innerText = `Items: ${files.length}`;
-            
             files.forEach(file => {
                 const el = document.createElement('div');
                 el.className = 'file-card';
                 if (selectedIds.includes(file.id)) el.classList.add('selected');
-                
                 el.innerHTML = `<img src="${file.icon || 'https://img.icons8.com/color/48/file.png'}" class="icon-48"><div class="file-label">${file.name}</div>`;
-                
-                // --- CLICK LOGIC ---
-                el.onclick = () => {
-                    if (isSelectionMode) {
-                        toggleFileSelection(file.id);
-                    } else {
-                        openPreview(file);
-                    }
-                };
-
-                // --- LONG PRESS LOGIC (0.7s) ---
-                addLongPress(el, () => {
-                    if (!isSelectionMode) {
-                        isSelectionMode = true;
-                        toggleFileSelection(file.id);
-                    }
-                });
-                
+                el.onclick = () => isSelectionMode ? toggleFileSelection(file.id) : openPreview(file);
+                addLongPress(el, () => { if (!isSelectionMode) { isSelectionMode = true; toggleFileSelection(file.id); } });
                 grid.appendChild(el);
             });
             updateSelectionUI();
@@ -442,31 +437,18 @@
 
         function toggleFileSelection(id) {
             const index = selectedIds.indexOf(id);
-            if (index > -1) {
-                selectedIds.splice(index, 1);
-            } else {
-                selectedIds.push(id);
-            }
+            index > -1 ? selectedIds.splice(index, 1) : selectedIds.push(id);
             if (selectedIds.length === 0) isSelectionMode = false;
             render();
         }
 
-        function clearSelection() {
-            selectedIds = [];
-            isSelectionMode = false;
-            render();
-        }
+        function clearSelection() { selectedIds = []; isSelectionMode = false; render(); }
 
         function updateSelectionUI() {
             const btnBulk = document.getElementById('btn-bulk-del');
             const selLabel = document.getElementById('selection-count');
-            if (selectedIds.length > 0) {
-                btnBulk.style.display = 'block';
-                selLabel.innerText = `${selectedIds.length} item(s) selected`;
-            } else {
-                btnBulk.style.display = 'none';
-                selLabel.innerText = '';
-            }
+            btnBulk.style.display = selectedIds.length > 0 ? 'block' : 'none';
+            selLabel.innerText = selectedIds.length > 0 ? `${selectedIds.length} item(s) selected` : '';
         }
 
         function bulkDelete() {
@@ -477,7 +459,7 @@
         }
 
         function openPreview(file) {
-            activeFile = file;
+            activeFile = file; blowPromptUsed = false;
             const win = document.getElementById('preview-window');
             const content = document.getElementById('prev-content');
             document.getElementById('prev-title').innerText = file.name;
@@ -485,22 +467,41 @@
             
             if(file.type === 'img') content.innerHTML = `<img src="${file.src}" style="max-width:100%; max-height:100%;">`;
             else if(file.type === 'iframe') content.innerHTML = `<iframe src="${file.src}" style="width:100%; height:100%; border:none; background:white;"></iframe>`;
+            else if(file.type === 'model') {
+                content.innerHTML = `<model-viewer src="${file.src}" camera-controls auto-rotate shadow-intensity="1" ar></model-viewer>`;
+            }
             else if(file.type === 'video') {
-                content.innerHTML = `<div id="blow-prompt" class="hidden">Blow on the screen!</div><video id="active-video" src="${file.src}" controls autoplay style="width:100%; height:100%;"></video>`;
-                if(file.name === 'bday.mp4') setupBlowLogic();
+                content.innerHTML = `
+                    <div id="quiet-prompt" class="hidden">Goto a quiet place...</div>
+                    <div id="blow-prompt" class="hidden">Blow on the screen!</div>
+                    <video id="active-video" src="${file.src}" controls autoplay playsinline style="width:100%; height:100%;"></video>`;
+                
+                const video = document.getElementById('active-video');
+                if(file.name === 'bday.mp4') {
+                    setupBlowLogic();
+                } else {
+                    video.play().catch(e => console.log("Autoplay blocked"));
+                }
             }
             else content.innerHTML = `<textarea style="width:100%; height:100%; padding:10px;">${file.src || ""}</textarea>`;
-            
             updateTaskbar();
         }
 
-        // --- BLOW LOGIC ---
         function setupBlowLogic() {
             const video = document.getElementById('active-video');
+            const quiet = document.getElementById('quiet-prompt');
+            video.pause();
+            quiet.classList.remove('hidden');
+            setTimeout(() => {
+                quiet.classList.add('hidden');
+                video.play();
+            }, 4500);
+
             video.ontimeupdate = () => {
-                if(video.currentTime >= 4 && !isWaitingForBlow) {
+                if(video.currentTime >= 4.5 && !isWaitingForBlow && !blowPromptUsed) {
                     video.pause();
                     isWaitingForBlow = true;
+                    blowPromptUsed = true;
                     document.getElementById('blow-prompt').classList.remove('hidden');
                     initMic();
                 }
@@ -508,46 +509,51 @@
         }
 
         async function initMic() {
-            if (!audioContext) {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                audioContext = new AudioContext();
-                const source = audioContext.createMediaStreamSource(stream);
-                analyser = audioContext.createAnalyser();
-                source.connect(analyser);
-                dataArray = new Uint8Array(analyser.frequencyBinCount);
-            }
-            checkMic();
+            try {
+                if (!audioContext) {
+                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                    audioContext = new AudioContext();
+                    const source = audioContext.createMediaStreamSource(stream);
+                    analyser = audioContext.createAnalyser();
+                    source.connect(analyser);
+                    dataArray = new Uint8Array(analyser.frequencyBinCount);
+                }
+                checkMic();
+            } catch(e) { console.error("Mic access denied"); }
         }
 
         function checkMic() {
-            if (!isWaitingForBlow) return;
-            analyser.getByteFrequencyData(dataArray);
-            let sum = dataArray.reduce((a, b) => a + b, 0);
-            if ((sum / dataArray.length) > 45) {
-                isWaitingForBlow = false;
-                document.getElementById('blow-prompt').classList.add('hidden');
-                document.getElementById('active-video').play();
-            } else {
-                requestAnimationFrame(checkMic);
-            }
+    if (!isWaitingForBlow) return;
+    
+    analyser.getByteFrequencyData(dataArray);
+    
+    // Find the loudest frequency peak instead of the average
+    let maxVolume = 0;
+    for (let i = 0; i < dataArray.length; i++) {
+        if (dataArray[i] > maxVolume) {
+            maxVolume = dataArray[i];
         }
+    }
 
-        // --- WINDOW MGMT ---
-        function toggleMinimize() { 
-            const win = document.getElementById('preview-window');
-            win.classList.toggle('minimized');
-            updateTaskbar();
-        }
+    // A value of 100-150 is usually a solid "blow" 
+    // lower this number (e.g., to 80) to make it SUPER sensitive
+    if (maxVolume > 80) { 
+        console.log("Blow detected! Volume:", maxVolume);
+        isWaitingForBlow = false;
+        document.getElementById('blow-prompt').classList.add('hidden');
+        document.getElementById('active-video').play();
+    } else {
+        requestAnimationFrame(checkMic);
+    }
+}
+
+
+        function toggleMinimize() { document.getElementById('preview-window').classList.toggle('minimized'); updateTaskbar(); }
         function toggleMaximize() { document.getElementById('preview-window').classList.toggle('maximized'); }
-        function closePreview() { 
-            document.getElementById('preview-window').classList.add('hidden'); 
-            activeFile = null; 
-            updateTaskbar(); 
-        }
+        function closePreview() { document.getElementById('preview-window').classList.add('hidden'); activeFile = null; updateTaskbar(); }
 
         function updateTaskbar() {
-            const container = document.getElementById('taskbar-apps');
-            container.innerHTML = '';
+            const container = document.getElementById('taskbar-apps'); container.innerHTML = '';
             if(!activeFile) return;
             const isMin = document.getElementById('preview-window').classList.contains('minimized');
             const item = document.createElement('div');
@@ -557,19 +563,18 @@
             container.appendChild(item);
         }
 
-        // --- DRAG LOGIC ---
         function makeDraggable(element) {
             let p1 = 0, p2 = 0, p3 = 0, p4 = 0;
             element.onmousedown = element.ontouchstart = dragStart;
 
             function dragStart(e) {
                 const tag = e.target.tagName.toLowerCase();
-                if(['input', 'button', 'select', 'textarea', 'video', 'iframe'].includes(tag) || e.target.closest('.win-controls')) return;
+                // Important: Don't drag when touching the 3D model or video controls
+                if(['input', 'button', 'select', 'textarea', 'video', 'model-viewer'].includes(tag) || e.target.closest('.win-controls')) return;
                 
                 const cx = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
                 const cy = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
                 p3 = cx; p4 = cy;
-                
                 document.onmousemove = document.ontouchmove = elementDrag;
                 document.onmouseup = document.ontouchend = closeDrag;
             }
@@ -577,12 +582,10 @@
             function elementDrag(e) {
                 const cx = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
                 const cy = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-                p1 = p3 - cx; p2 = p4 - cy;
-                p3 = cx; p4 = cy;
+                p1 = p3 - cx; p2 = p4 - cy; p3 = cx; p4 = cy;
                 element.style.top = (element.offsetTop - p2) + "px";
                 element.style.left = (element.offsetLeft - p1) + "px";
             }
-
             function closeDrag() { document.onmousemove = document.ontouchmove = null; }
         }
 
@@ -590,20 +593,17 @@
         makeDraggable(document.getElementById('add-window'));
         makeDraggable(document.getElementById('del-window'));
 
-        // --- UTILS ---
         function addLongPress(el, action) {
             let timer;
-            el.addEventListener('mousedown', () => timer = setTimeout(action, 700));
-            el.addEventListener('touchstart', () => timer = setTimeout(action, 700));
+            el.addEventListener('mousedown', () => timer = setTimeout(action, 200));
+            el.addEventListener('touchstart', () => timer = setTimeout(action, 200));
             el.addEventListener('mouseup', () => clearTimeout(timer));
             el.addEventListener('touchend', () => clearTimeout(timer));
         }
 
         function confirmDelete() { 
             const list = fileSystem[currentFolder];
-            
             if (deleteTargetId === "BULK") {
-                // Delete all selected files
                 selectedIds.forEach(id => {
                     const idx = list.findIndex(f => f.id === id);
                     if (idx > -1) {
@@ -613,15 +613,13 @@
                 });
                 clearSelection();
             } else if (deleteTargetId) {
-                // Single file delete (fallback)
                 const idx = list.findIndex(f => f.id === deleteTargetId);
                 if(idx > -1) {
                     const item = list.splice(idx, 1)[0];
                     if(currentFolder !== 'Recycle Bin') fileSystem['Recycle Bin'].push(item);
                 }
             }
-            closeDelModal(); 
-            render();
+            closeDelModal(); render();
         }
 
         function filterFiles() {
@@ -637,17 +635,16 @@
             const name = document.getElementById('inp-name').value;
             const type = document.getElementById('inp-type').value;
             const src = document.getElementById('inp-src').value;
-            fileSystem[currentFolder].push({ id: Date.now(), name, type, src, icon: 'https://img.icons8.com/color/48/file.png' });
+            const icon = type === 'model' ? 'https://img.icons8.com/color/48/3d-model.png' : 'https://img.icons8.com/color/48/file.png';
+            fileSystem[currentFolder].push({ id: Date.now(), name, type, src, icon: icon });
             closeAddModal(); render();
         }
-        
         function emptyBin() { fileSystem['Recycle Bin'] = []; render(); }
 
         setInterval(() => { 
             const d = new Date(); 
             document.getElementById('clock').innerText = d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0'); 
         }, 1000);
-        
         nav('Pictures');
     </script>
 </body>
