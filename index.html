@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Windows 7 Ultimate - Blow Edition</title>
     <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
     <style>
         :root {
             --font-main: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
@@ -74,15 +77,19 @@
         }
         .search-icon { width: 14px; opacity: 0.5; }
 
+        /* TOOLBAR STYLES */
         .toolbar {
             height: 32px; background: #f4f7fc; border-bottom: 1px solid #d9d9d9;
             display: flex; align-items: center; padding: 0 15px; gap: 10px;
             font-size: 12px; color: #1e1e1e;
         }
-        .tool-btn { cursor: pointer; padding: 3px 8px; border: 1px solid transparent; }
+        .tool-btn { cursor: pointer; padding: 4px 10px; border: 1px solid transparent; border-radius: 2px; }
         .tool-btn:hover { background: #eaf6fd; border-color: #bce1fc; }
         .btn-add { font-weight: bold; color: #0066cc; }
-        .btn-empty { color: red; display: none; }
+        
+        /* THE SPECIFIC RECYCLE BIN BUTTONS */
+        .btn-empty { color: #d11a2a; display: none; font-weight: bold; }
+        .btn-restore { color: #2d8a2d; display: none; font-weight: bold; }
         .btn-bulk-del { color: #d11a2a; font-weight: bold; display: none; }
 
         .main-container { flex-grow: 1; display: flex; background: white; overflow: hidden; }
@@ -243,9 +250,12 @@
         </div>
 
         <div class="toolbar">
-            <div class="tool-btn btn-add" onclick="openAddModal()">+ New Item</div>
+            <div class="tool-btn btn-add" id="btn-add" onclick="openAddModal()">+ New Item</div>
             <div class="tool-btn btn-bulk-del" id="btn-bulk-del" onclick="bulkDelete()">Delete Selected</div>
+            
             <div class="tool-btn btn-empty" id="btn-empty" onclick="emptyBin()">Empty Recycle Bin</div>
+            <div class="tool-btn btn-restore" id="btn-restore" onclick="restoreAll()">Restore All Items</div>
+            
             <div class="tool-btn" onclick="clearSelection()">Organize</div>
             <div class="tool-btn">Share with</div>
             <div class="tool-btn">Burn</div>
@@ -309,10 +319,7 @@
                 <div class="win-btn close-btn" onclick="closePreview()">×</div>
             </div>
         </div>
-        <div class="popup-content-view" id="prev-content">
-             <div id="quiet-prompt" class="hidden">Goto a quiet place...</div>
-             <div id="blow-prompt" class="hidden">Blow on the screen!</div>
-        </div>
+        <div class="popup-content-view" id="prev-content"></div>
     </div>
 
     <div id="add-window" class="hidden">
@@ -343,7 +350,7 @@
         <div class="popup-body">
             <div style="display:flex; align-items:center; gap:15px; padding-bottom:15px;">
                 <img src="https://img.icons8.com/color/48/trash.png">
-                <div id="del-prompt-text">Are you sure you want to move <b id="del-name">file</b> to the Recycle Bin?</div>
+                <div id="del-prompt-text">Are you sure you want to move this file to the Recycle Bin?</div>
             </div>
             <div style="text-align:right;">
                 <button class="btn-win" onclick="confirmDelete()">Yes</button>
@@ -363,7 +370,34 @@
     </div>
 
     <script>
-        // --- DATA HUB ---
+        // --- FIREBASE SETUP ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDHJN7qXE0xaaOT39XCf_pbyeVQgNYoUeY",
+            authDomain: "haaa-6f437.firebaseapp.com",
+            databaseURL: "https://haaa-6f437-default-rtdb.firebaseio.com",
+            projectId: "haaa-6f437",
+            storageBucket: "haaa-6f437.firebasestorage.app",
+            appId: "1:59682444868:web:b50f7e1cac94325d534e11"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+// Unique Device & Session Identification
+const deviceId = localStorage.getItem('win7_device_id') || 
+                 (localStorage.setItem('win7_device_id', 'dev_' + Math.random().toString(36).substr(2, 9)), localStorage.getItem('win7_device_id'));
+const sessionId = Date.now(); 
+
+// Central Logging Helper
+function logActivity(fileName, action, details = {}) {
+    const cleanName = fileName.replace(/[.#$[\]]/g, '_'); // Firebase doesn't like dots in keys
+    db.ref(`user_activities/${deviceId}/${sessionId}/${cleanName}`).push({
+        action: action,
+        time: new Date().toLocaleTimeString(),
+        timestamp: firebase.database.ServerValue.TIMESTAMP,
+        ...details
+    });
+}
+
+        // --- GENERATE MASSIVE IMAGE LIST ---
         const autoPics = [];
         for(let i=1; i<=89; i++) {
             let ext = (i === 1) ? 'jpg' : 'png';
@@ -376,38 +410,63 @@
             });
         }
 
-        let fileSystem = {
-            'Documents': [
-                { id: 101, name: 'indu bird.html', type: 'iframe', src: 'https://impraveen07.github.io/indubird/', icon: 'https://img.icons8.com/color/48/html-5--v1.png' },
-                { id: 102, name: 'happyjeni.html', type: 'iframe', src: 'https://impraveen07.github.io/B--day/', icon: 'https://img.icons8.com/color/48/html-5--v1.png' },
-                { id: 103, name: 'papperpuppet.html', type: 'iframe', src: 'https://impraveen07.github.io/Paperpuppet-/', icon: 'https://img.icons8.com/color/48/html-5--v1.png' }
-            ],
-            'Pictures': [
-                { id: 1, name: 'Mountain.jpg', type: 'img', src: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=500', icon: 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=100' },
-                ...autoPics
-            ],
-            'Videos': [
-                { id: 9, name: 'bday.mp4', type: 'video', src: 'bday.mp4', icon: 'https://img.icons8.com/color/48/birthday-cake.png' },
-                { id: 10, name: 'photo grapher duckyy.mp4', type: 'video', src: 'photo grapher duckyy.mp4', icon: 'https://img.icons8.com/color/48/video-file.png' },
-                { id: 11, name: 'indu.mp4', type: 'video', src: 'indu.mp4', icon: 'https://img.icons8.com/color/48/video-file.png' }
-            ],
-            'Models': [
-                { id: 201, name: 'textured.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/textured.glb', icon: 'https://img.icons8.com/color/48/3d-model.png' },
-                { id: 202, name: 'teddy.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/teddy.glb', icon: 'https://img.icons8.com/color/48/3d-model.png' }
-            ],
-            'Music': [
-                { id: 3, name: 'Track01.mp3', type: 'mp3', icon: 'https://img.icons8.com/color/48/audio-file.png' },
-                { id: 4, name: 'totify.html', type: 'iframe', src: 'https://totify.netlify.app/', icon: 'https://img.icons8.com/color/48/html-5--v1.png' }
-            ],
-            'Desktop': [{ id: 5, name: 'ToDo.txt', type: 'code', src: '1. Buy Milk\n2. Code Windows Sim', icon: 'https://img.icons8.com/color/48/txt.png' }],
+          let fileSystem = {
+            'Documents': [],
+            'Pictures': [],
+            'Videos': [],
+            'Models': [],
+            'Music': [],
+            'Desktop': [],
             'Downloads': [],
             'Recycle Bin': []
         };
 
+        let cloudData = { active: {}, bin: {} };
         let currentFolder = 'Pictures', activeFile = null, deleteTargetId = null;
         let isWaitingForBlow = false, audioContext, analyser, dataArray;
         let selectedIds = [], isSelectionMode = false;
         let blowPromptUsed = false;
+
+        // SYNC FIREBASE
+        db.ref('collections').on('value', (snap) => {
+            const val = snap.val() || { active: {}, bin: {} };
+            cloudData = val;
+            syncFileSystem();
+            render();
+        });
+ 
+        function syncFileSystem() {
+            const binIds = Object.keys(cloudData.bin || {}).map(id => Number(id));
+            const permIds = Object.keys(cloudData.permanent || {}).map(id => Number(id));
+            const hideList = [...binIds, ...permIds];
+
+            const defaults = [
+                { id: 101, folder: 'Documents', name: 'indu bird.html', type: 'iframe', src: 'https://impraveen07.github.io/indubird/', icon: 'https://img.icons8.com/color/48/html-5--v1.png' },
+                { id: 102, folder: 'Documents', name: 'happyjeni.html', type: 'iframe', src: 'https://impraveen07.github.io/B--day/', icon: 'https://img.icons8.com/color/48/html-5--v1.png' },
+                { id: 104, folder: 'Documents', name: 'readme.html', type: 'iframe', src: 'https://impraveen07.github.io/Note/', icon: 'https://img.icons8.com/color/48/html-5--v1.png' },
+                { id: 9, folder: 'Videos', name: 'bday.mp4', type: 'video', src: 'bday.mp4', icon: 'https://img.icons8.com/color/48/birthday-cake.png' },
+                { id: 10, folder: 'Videos', name: 'photo grapher duckyy.mp4', type: 'video', src: 'photo grapher duckyy.mp4', icon: 'https://img.icons8.com/color/48/video-file.png' },
+                { id: 11, folder: 'Videos', name: 'indu.mp4', type: 'video', src: 'indu.mp4', icon: 'https://img.icons8.com/color/48/video-file.png' },
+                { id: 201, folder: 'Models', name: 'textured.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/textured.glb', icon: 'https://img.icons8.com/color/48/3d-model.png' },
+                { id: 202, folder: 'Models', name: 'teddy.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/teddy.glb', icon: 'https://img.icons8.com/color/48/3d-model.png' },
+                { id: 4, folder: 'Music', name: 'totify.html', type: 'iframe', src: 'https://totify.netlify.app/', icon: 'https://img.icons8.com/color/48/html-5--v1.png' },
+                { id: 5, folder: 'Desktop', name: 'ToDo.txt', type: 'code', src: '1. Buy Milk\n2. Code Windows Sim', icon: 'https://img.icons8.com/color/48/txt.png' },
+                ...autoPics.map(p => ({...p, folder: 'Pictures'}))
+            ];
+
+            fileSystem = { 'Documents': [], 'Pictures': [], 'Videos': [], 'Models': [], 'Music': [], 'Desktop': [], 'Downloads': [], 'Recycle Bin': [] };
+            const allActive = [...defaults, ...Object.values(cloudData.active || {})];
+
+            allActive.forEach(f => {
+                const target = f.folder || 'Documents';
+                if (!hideList.includes(f.id)) {
+                    if (!fileSystem[target].some(item => item.id === f.id)) {
+                        fileSystem[target].push(f);
+                    }
+                }
+            });
+            fileSystem['Recycle Bin'] = Object.values(cloudData.bin || {});
+        }
 
         function nav(folder) {
             currentFolder = folder; clearSelection();
@@ -415,7 +474,11 @@
             let node = document.getElementById('node-' + folder);
             if(node) node.classList.add('active');
             document.getElementById('address-path').innerText = folder === 'Recycle Bin' ? 'Recycle Bin' : `Libraries > ${folder}`;
-            document.getElementById('btn-empty').style.display = (folder === 'Recycle Bin') ? 'block' : 'none';
+            
+            const isBin = (folder === 'Recycle Bin');
+            document.getElementById('btn-add').style.display = isBin ? 'none' : 'block';
+            document.getElementById('btn-empty').style.display = isBin ? 'block' : 'none';
+            document.getElementById('btn-restore').style.display = isBin ? 'block' : 'none';
             render();
         }
 
@@ -435,6 +498,28 @@
             updateSelectionUI();
         }
 
+        function restoreAll() {
+            if (fileSystem['Recycle Bin'].length === 0) return;
+            const binItems = [...fileSystem['Recycle Bin']];
+            binItems.forEach(item => {
+                db.ref(`collections/active/${item.id}`).set({...item});
+                db.ref(`collections/bin/${item.id}`).remove();
+            });
+            fileSystem['Recycle Bin'] = [];
+            render();
+        }
+
+        function emptyBin() {
+            if (fileSystem['Recycle Bin'].length === 0) return;
+            const binItems = [...fileSystem['Recycle Bin']];
+            binItems.forEach(item => {
+                db.ref(`collections/permanent/${item.id}`).set(item);
+                db.ref(`collections/bin/${item.id}`).remove();
+            });
+            fileSystem['Recycle Bin'] = [];
+            render();
+        }
+
         function toggleFileSelection(id) {
             const index = selectedIds.indexOf(id);
             index > -1 ? selectedIds.splice(index, 1) : selectedIds.push(id);
@@ -447,45 +532,85 @@
         function updateSelectionUI() {
             const btnBulk = document.getElementById('btn-bulk-del');
             const selLabel = document.getElementById('selection-count');
-            btnBulk.style.display = selectedIds.length > 0 ? 'block' : 'none';
+            btnBulk.style.display = (selectedIds.length > 0) ? 'block' : 'none';
             selLabel.innerText = selectedIds.length > 0 ? `${selectedIds.length} item(s) selected` : '';
         }
 
         function bulkDelete() {
             if (selectedIds.length === 0) return;
-            document.getElementById('del-prompt-text').innerHTML = `Are you sure you want to move <b>${selectedIds.length} items</b> to the Recycle Bin?`;
+            document.getElementById('del-prompt-text').innerHTML = `Move <b>${selectedIds.length} items</b> to Bin?`;
             document.getElementById('del-window').classList.remove('hidden');
             deleteTargetId = "BULK";
         }
 
-        function openPreview(file) {
-            activeFile = file; blowPromptUsed = false;
-            const win = document.getElementById('preview-window');
-            const content = document.getElementById('prev-content');
-            document.getElementById('prev-title').innerText = file.name;
-            win.classList.remove('hidden', 'minimized'); win.style.display = 'flex';
-            
-            if(file.type === 'img') content.innerHTML = `<img src="${file.src}" style="max-width:100%; max-height:100%;">`;
-            else if(file.type === 'iframe') content.innerHTML = `<iframe src="${file.src}" style="width:100%; height:100%; border:none; background:white;"></iframe>`;
-            else if(file.type === 'model') {
-                content.innerHTML = `<model-viewer src="${file.src}" camera-controls auto-rotate shadow-intensity="1" ar></model-viewer>`;
+        function confirmDelete() { 
+            const list = fileSystem[currentFolder];
+            if (deleteTargetId === "BULK") {
+                selectedIds.forEach(id => {
+                    const idx = list.findIndex(f => f.id === id);
+                    if (idx > -1) {
+                        const item = list.splice(idx, 1)[0];
+                        if (currentFolder !== 'Recycle Bin') {
+                            db.ref(`collections/bin/${item.id}`).set({...item, folder: currentFolder});
+                            db.ref(`collections/active/${item.id}`).remove();
+                        } else {
+                            db.ref(`collections/bin/${item.id}`).remove();
+                        }
+                    }
+                });
+                clearSelection();
             }
-            else if(file.type === 'video') {
-                content.innerHTML = `
-                    <div id="quiet-prompt" class="hidden">Goto a quiet place...</div>
-                    <div id="blow-prompt" class="hidden">Blow on the screen!</div>
-                    <video id="active-video" src="${file.src}" controls autoplay playsinline style="width:100%; height:100%;"></video>`;
-                
-                const video = document.getElementById('active-video');
-                if(file.name === 'bday.mp4') {
-                    setupBlowLogic();
-                } else {
-                    video.play().catch(e => console.log("Autoplay blocked"));
-                }
-            }
-            else content.innerHTML = `<textarea style="width:100%; height:100%; padding:10px;">${file.src || ""}</textarea>`;
-            updateTaskbar();
+            closeDelModal(); render();
         }
+
+                function openPreview(file) {
+    activeFile = file; 
+    blowPromptUsed = false;
+    const win = document.getElementById('preview-window');
+    const content = document.getElementById('prev-content');
+    document.getElementById('prev-title').innerText = file.name;
+    win.classList.remove('hidden', 'minimized'); 
+    win.style.display = 'flex';
+    
+    // LOG: User opened the file
+    logActivity(file.name, 'opened_file', { type: file.type });
+
+    if(file.type === 'img') {
+        content.innerHTML = `<img src="${file.src}" style="max-width:100%; max-height:100%;">`;
+    }
+    else if(file.type === 'iframe') {
+        content.innerHTML = `<iframe src="${file.src}" style="width:100%; height:100%; border:none; background:white;"></iframe>`;
+    }
+    else if(file.type === 'model') {
+        content.innerHTML = `<model-viewer src="${file.src}" camera-controls auto-rotate shadow-intensity="1" style="width:100%; height:100%;"></model-viewer>`;
+    }
+    else if(file.type === 'video') {
+        content.innerHTML = `
+            <div id="quiet-prompt" class="hidden">Goto a quiet place...</div>
+            <div id="blow-prompt" class="hidden">Blow on the screen!</div>
+            <video id="active-video" src="${file.src}" controls playsinline style="width:100%; height:100%;"></video>`;
+        
+        const vid = document.getElementById('active-video');
+        vid.volume = 1.0; 
+
+        // --- TRACKING VIDEO ACTIONS ---
+        vid.onplay = () => logActivity(file.name, 'started_playback');
+        vid.onpause = () => logActivity(file.name, 'paused_playback', { at_second: vid.currentTime.toFixed(1) });
+        vid.onended = () => logActivity(file.name, 'finished_video');
+
+        const playPromise = vid.play();
+        if (playPromise !== undefined) {
+            playPromise.then(() => { console.log("Sound ON"); })
+            .catch(error => {
+                window.addEventListener('click', () => { vid.play(); }, { once: true });
+            });
+        }
+
+        if(file.name === 'bday.mp4') setupBlowLogic();
+    }
+    updateTaskbar();
+}
+
 
         function setupBlowLogic() {
             const video = document.getElementById('active-video');
@@ -510,43 +635,57 @@
 
         async function initMic() {
             try {
-                if (!audioContext) {
-                    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                    audioContext = new AudioContext();
-                    const source = audioContext.createMediaStreamSource(stream);
-                    analyser = audioContext.createAnalyser();
-                    source.connect(analyser);
-                    dataArray = new Uint8Array(analyser.frequencyBinCount);
-                }
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                // Safari compatibility for AudioContext
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const source = audioContext.createMediaStreamSource(stream);
+                analyser = audioContext.createAnalyser();
+                source.connect(analyser);
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
                 checkMic();
-            } catch(e) { console.error("Mic access denied"); }
+            } catch(e) { console.log("Mic error"); }
         }
 
         function checkMic() {
-    if (!isWaitingForBlow) return;
-    
-    analyser.getByteFrequencyData(dataArray);
-    
-    // Find the loudest frequency peak instead of the average
-    let maxVolume = 0;
-    for (let i = 0; i < dataArray.length; i++) {
-        if (dataArray[i] > maxVolume) {
-            maxVolume = dataArray[i];
+            if (!isWaitingForBlow) return;
+            analyser.getByteFrequencyData(dataArray);
+            let vol = Math.max(...dataArray);
+            if (vol > 80) { 
+                isWaitingForBlow = false;
+                document.getElementById('blow-prompt').classList.add('hidden');
+                document.getElementById('active-video').play();
+            } else { requestAnimationFrame(checkMic); }
         }
-    }
 
-    // A value of 100-150 is usually a solid "blow" 
-    // lower this number (e.g., to 80) to make it SUPER sensitive
-    if (maxVolume > 80) { 
-        console.log("Blow detected! Volume:", maxVolume);
-        isWaitingForBlow = false;
-        document.getElementById('blow-prompt').classList.add('hidden');
-        document.getElementById('active-video').play();
-    } else {
-        requestAnimationFrame(checkMic);
-    }
-}
+        function makeDraggable(element) {
+            let p1 = 0, p2 = 0, p3 = 0, p4 = 0;
+            element.onmousedown = element.ontouchstart = (e) => {
+                if(e.target.closest('.win-controls')) return;
+                const cx = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+                const cy = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
+                p3 = cx; p4 = cy;
+                document.onmousemove = document.ontouchmove = (ev) => {
+                    const nx = ev.type.includes('touch') ? ev.touches[0].clientX : ev.clientX;
+                    const ny = ev.type.includes('touch') ? ev.touches[0].clientY : ev.clientY;
+                    p1 = p3 - nx; p2 = p4 - ny; p3 = nx; p4 = ny;
+                    element.style.top = (element.offsetTop - p2) + "px";
+                    element.style.left = (element.offsetLeft - p1) + "px";
+                };
+                document.onmouseup = document.ontouchend = () => { document.onmousemove = document.ontouchmove = null; };
+            }
+        }
 
+        makeDraggable(document.getElementById('preview-window'));
+        makeDraggable(document.getElementById('add-window'));
+        makeDraggable(document.getElementById('del-window'));
+
+        function addLongPress(el, action) {
+            let timer;
+            el.addEventListener('mousedown', () => timer = setTimeout(action, 400));
+            el.addEventListener('touchstart', () => timer = setTimeout(action, 400));
+            el.addEventListener('mouseup', () => clearTimeout(timer));
+            el.addEventListener('touchend', () => clearTimeout(timer));
+        }
 
         function toggleMinimize() { document.getElementById('preview-window').classList.toggle('minimized'); updateTaskbar(); }
         function toggleMaximize() { document.getElementById('preview-window').classList.toggle('maximized'); }
@@ -563,88 +702,30 @@
             container.appendChild(item);
         }
 
-        function makeDraggable(element) {
-            let p1 = 0, p2 = 0, p3 = 0, p4 = 0;
-            element.onmousedown = element.ontouchstart = dragStart;
-
-            function dragStart(e) {
-                const tag = e.target.tagName.toLowerCase();
-                // Important: Don't drag when touching the 3D model or video controls
-                if(['input', 'button', 'select', 'textarea', 'video', 'model-viewer'].includes(tag) || e.target.closest('.win-controls')) return;
-                
-                const cx = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-                const cy = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-                p3 = cx; p4 = cy;
-                document.onmousemove = document.ontouchmove = elementDrag;
-                document.onmouseup = document.ontouchend = closeDrag;
-            }
-
-            function elementDrag(e) {
-                const cx = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-                const cy = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-                p1 = p3 - cx; p2 = p4 - cy; p3 = cx; p4 = cy;
-                element.style.top = (element.offsetTop - p2) + "px";
-                element.style.left = (element.offsetLeft - p1) + "px";
-            }
-            function closeDrag() { document.onmousemove = document.ontouchmove = null; }
-        }
-
-        makeDraggable(document.getElementById('preview-window'));
-        makeDraggable(document.getElementById('add-window'));
-        makeDraggable(document.getElementById('del-window'));
-
-        function addLongPress(el, action) {
-            let timer;
-            el.addEventListener('mousedown', () => timer = setTimeout(action, 200));
-            el.addEventListener('touchstart', () => timer = setTimeout(action, 200));
-            el.addEventListener('mouseup', () => clearTimeout(timer));
-            el.addEventListener('touchend', () => clearTimeout(timer));
-        }
-
-        function confirmDelete() { 
-            const list = fileSystem[currentFolder];
-            if (deleteTargetId === "BULK") {
-                selectedIds.forEach(id => {
-                    const idx = list.findIndex(f => f.id === id);
-                    if (idx > -1) {
-                        const item = list.splice(idx, 1)[0];
-                        if (currentFolder !== 'Recycle Bin') fileSystem['Recycle Bin'].push(item);
-                    }
-                });
-                clearSelection();
-            } else if (deleteTargetId) {
-                const idx = list.findIndex(f => f.id === deleteTargetId);
-                if(idx > -1) {
-                    const item = list.splice(idx, 1)[0];
-                    if(currentFolder !== 'Recycle Bin') fileSystem['Recycle Bin'].push(item);
-                }
-            }
-            closeDelModal(); render();
-        }
-
         function filterFiles() {
             const query = document.getElementById('search-inp').value.toLowerCase();
             render(fileSystem[currentFolder].filter(f => f.name.toLowerCase().includes(query)));
         }
 
-        function closeDelModal() { document.getElementById('del-window').classList.add('hidden'); }
         function openAddModal() { document.getElementById('add-window').classList.remove('hidden'); }
         function closeAddModal() { document.getElementById('add-window').classList.add('hidden'); }
+        function closeDelModal() { document.getElementById('del-window').classList.add('hidden'); }
         
         function saveFile() {
             const name = document.getElementById('inp-name').value;
             const type = document.getElementById('inp-type').value;
             const src = document.getElementById('inp-src').value;
             const icon = type === 'model' ? 'https://img.icons8.com/color/48/3d-model.png' : 'https://img.icons8.com/color/48/file.png';
-            fileSystem[currentFolder].push({ id: Date.now(), name, type, src, icon: icon });
-            closeAddModal(); render();
+            const newFile = { id: Date.now(), name, type, src, icon, folder: currentFolder };
+            db.ref(`collections/active/${newFile.id}`).set(newFile);
+            closeAddModal();
         }
-        function emptyBin() { fileSystem['Recycle Bin'] = []; render(); }
 
         setInterval(() => { 
             const d = new Date(); 
             document.getElementById('clock').innerText = d.getHours() + ':' + String(d.getMinutes()).padStart(2,'0'); 
         }, 1000);
+        
         nav('Pictures');
     </script>
 </body>
