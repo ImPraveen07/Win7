@@ -25,8 +25,8 @@
         }
 
         /* --- UTILS --- */
-        .icon-16 { width: 16px; height: 16px; display: block; object-fit: contain; }
-        .icon-48 { width: 48px; height: 48px; display: block; object-fit: contain; }
+        .icon-16 { width: 40px; height: 40px; display: block; object-fit: contain; }
+        .icon-48 { width: 90px; height: 90px; display: block; object-fit: contain; }
         .hidden { display: none !important; }
 
         /* --- MAIN FIXED EXPLORER WINDOW --- */
@@ -99,7 +99,7 @@
             padding-top: 10px; overflow-y: auto;
         }
         .tree-item {
-            display: flex; align-items: center; padding: 3px 5px; font-size: 12px;
+            display: flex; align-items: center; padding: 3px 5px; font-size: 16px;
             cursor: pointer; border: 1px solid transparent; margin-bottom: 1px;
         }
         .tree-item:hover { background: #eff6fc; border-color: #d9ebf9; }
@@ -230,7 +230,7 @@
 
     <div id="explorer-fixed">
         <div class="title-bar">
-            <img src="https://img.icons8.com/color/48/monitor--v1.png" class="icon-16" style="margin-right:6px">
+            <img src="https://img.icons8.com/?size=96&id=12908&format=png" class="icon-16" style="margin-right:6px">
             <div class="title-text">Computer</div>
         </div>
 
@@ -267,36 +267,36 @@
                     <img src="https://img.icons8.com/color/48/star--v1.png" class="icon-16"> <span style="margin-left:5px">Favorites</span>
                 </div>
                 <div class="tree-item indent-2" onclick="nav('Desktop')">
-                    <img src="https://img.icons8.com/color/48/desktop-mac.png" class="icon-16"> <span style="margin-left:5px">Desktop</span>
+                    <img src="https://img.icons8.com/?size=96&id=lDxPxP30VJWI&format=png" class="icon-16"> <span style="margin-left:5px">Desktop</span>
                 </div>
                 <div class="tree-item indent-2" onclick="nav('Downloads')">
-                    <img src="https://img.icons8.com/color/48/download--v1.png" class="icon-16"> <span style="margin-left:5px">Downloads</span>
+                    <img src="https://img.icons8.com/?size=96&id=vh41fDz8FQSM&format=png" class="icon-16"> <span style="margin-left:5px">Downloads</span>
                 </div>
                 
                 <div class="tree-item indent-1 group-title" style="margin-top:10px;">
-                    <img src="https://img.icons8.com/color/48/books.png" class="icon-16"> <span style="margin-left:5px">Libraries</span>
+                    <img src="https://img.icons8.com/?size=160&id=8usf5rRDbGuI&format=png" class="icon-16"> <span style="margin-left:5px">Libraries</span>
                 </div>
                 <div class="tree-item indent-2" id="node-Documents" onclick="nav('Documents')">
-                    <img src="https://img.icons8.com/color/48/opened-folder.png" class="icon-16"> <span style="margin-left:5px">Documents</span>
+                    <img src="https://img.icons8.com/?size=96&id=12987&format=png" class="icon-16"> <span style="margin-left:5px">Documents</span>
                 </div>
                 <div class="tree-item indent-2" id="node-Pictures" onclick="nav('Pictures')">
-                    <img src="https://img.icons8.com/color/48/image-file.png" class="icon-16"> <span style="margin-left:5px">Pictures</span>
+                    <img src="photos.png" class="icon-16"> <span style="margin-left:5px">Pictures</span>
                 </div>
                 <div class="tree-item indent-2" id="node-Videos" onclick="nav('Videos')">
-                    <img src="https://img.icons8.com/color/48/video-file.png" class="icon-16"> <span style="margin-left:5px">Videos</span>
+                    <img src="video.png" class="icon-16"> <span style="margin-left:5px">Videos</span>
                 </div>
                 <div class="tree-item indent-2" id="node-Models" onclick="nav('Models')">
-                    <img src="https://img.icons8.com/color/48/3d-model.png" class="icon-16"> <span style="margin-left:5px">Models</span>
+                    <img src="model.png" class="icon-16"> <span style="margin-left:5px">Models</span>
                 </div>
                 <div class="tree-item indent-2" id="node-Music" onclick="nav('Music')">
-                    <img src="https://img.icons8.com/color/48/musical-notes.png" class="icon-16"> <span style="margin-left:5px">Music</span>
+                    <img src="music.png" class="icon-16"> <span style="margin-left:5px">Music</span>
                 </div>
 
                 <div class="tree-item indent-1 group-title" style="margin-top:10px;">
-                    <img src="https://img.icons8.com/color/48/trash.png" class="icon-16"> <span style="margin-left:5px">System</span>
+                    <img src="bin.png" class="icon-16"> <span style="margin-left:5px">System</span>
                 </div>
                 <div class="tree-item indent-2" id="node-Recycle Bin" onclick="nav('Recycle Bin')">
-                    <img src="https://img.icons8.com/color/48/trash.png" class="icon-16"> <span style="margin-left:5px">Recycle Bin</span>
+                    <img src="bin.png" class="icon-16"> <span style="margin-left:5px">Recycle Bin</span>
                 </div>
             </div>
 
@@ -441,15 +441,16 @@ function logActivity(fileName, action, details = {}) {
             const hideList = [...binIds, ...permIds];
 
             const defaults = [
-                { id: 101, folder: 'Documents', name: 'indu bird.html', type: 'iframe', src: 'https://impraveen07.github.io/indubird/', icon: 'https://img.icons8.com/color/48/html-5--v1.png' },
-                { id: 102, folder: 'Documents', name: 'happyjeni.html', type: 'iframe', src: 'https://impraveen07.github.io/B--day/', icon: 'https://img.icons8.com/color/48/html-5--v1.png' },
-                { id: 104, folder: 'Documents', name: 'readme.html', type: 'iframe', src: 'https://impraveen07.github.io/Note/', icon: 'https://img.icons8.com/color/48/html-5--v1.png' },
+                { id: 101, folder: 'Documents', name: 'indu_bird.html', type: 'iframe', src: 'https://impraveen07.github.io/indubird/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
+                { id: 102, folder: 'Documents', name: 'happy_jenicha_day.html', type: 'iframe', src: 'https://impraveen07.github.io/B--day/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
+                { id: 104, folder: 'Documents', name: 'read_me.html', type: 'iframe', src: 'https://impraveen07.github.io/Note/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
                 { id: 9, folder: 'Videos', name: 'bday.mp4', type: 'video', src: 'bday.mp4', icon: 'https://img.icons8.com/color/48/birthday-cake.png' },
-                { id: 10, folder: 'Videos', name: 'photo grapher duckyy.mp4', type: 'video', src: 'photo grapher duckyy.mp4', icon: 'https://img.icons8.com/color/48/video-file.png' },
-                { id: 11, folder: 'Videos', name: 'indu.mp4', type: 'video', src: 'indu.mp4', icon: 'https://img.icons8.com/color/48/video-file.png' },
-                { id: 201, folder: 'Models', name: 'textured.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/textured.glb', icon: 'https://img.icons8.com/color/48/3d-model.png' },
-                { id: 202, folder: 'Models', name: 'teddy.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/teddy.glb', icon: 'https://img.icons8.com/color/48/3d-model.png' },
-                { id: 4, folder: 'Music', name: 'totify.html', type: 'iframe', src: 'https://totify.netlify.app/', icon: 'https://img.icons8.com/color/48/html-5--v1.png' },
+                { id: 10, folder: 'Videos', name: 'photo grapher duckyy.mp4', type: 'video', src: 'photo grapher duckyy.mp4', icon: 'https://img.icons8.com/?size=96&id=v48YeNbSIl9z&format=png' },
+                { id: 11, folder: 'Videos', name: 'indu.mp4', type: 'video', src: 'indu.mp4', icon: 'https://img.icons8.com/?size=96&id=v48YeNbSIl9z&format=png' },
+                { id: 201, folder: 'Models', name: 'textured.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/textured.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
+                { id: 202, folder: 'Models', name: 'teddy.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/teddy.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
+                { id: 203, folder: 'Models', name: 'camera.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/cam.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
+                { id: 4, folder: 'Music', name: 'totify.html', type: 'iframe', src: 'https://totify.netlify.app/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
                 { id: 5, folder: 'Desktop', name: 'ToDo.txt', type: 'code', src: '1. Buy Milk\n2. Code Windows Sim', icon: 'https://img.icons8.com/color/48/txt.png' },
                 ...autoPics.map(p => ({...p, folder: 'Pictures'}))
             ];
