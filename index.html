@@ -1,23 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>INDU4 - Simple View</title>
+    <title>INDU4 - Debugger</title>
     <style>
-        body { font-family: sans-serif; background: #ffe6f2; padding: 20px; color: #ff69b4; }
-        .box { background: white; padding: 20px; border-radius: 15px; border: 3px solid #ffb3d9; }
-        table { width: 100%; border-collapse: collapse; background: white; color: #333; }
-        th, td { padding: 10px; border: 1px solid #ffb3d9; text-align: left; }
+        body { font-family: 'Segoe UI', sans-serif; background: #ffe6f2; padding: 20px; }
+        .box { background: white; padding: 20px; border-radius: 15px; border: 4px solid #ffb3d9; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        h2 { color: #ff69b4; text-align: center; border-bottom: 2px dashed #ffb3d9; padding-bottom: 10px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; border: 1px solid #ffb3d9; text-align: left; font-size: 13px; }
         th { background: #ff69b4; color: white; }
+        .type-tag { font-size: 10px; padding: 2px 6px; background: #eee; border-radius: 4px; color: #666; }
     </style>
 </head>
 <body>
 
 <div class="box">
-    <h2>✨ INDU4 Storage Inspector</h2>
+    <h2>✨ INDU4 Internal Storage</h2>
     <table id="list">
         <thead>
             <tr>
                 <th>File Name (Key)</th>
+                <th>Storage Type</th>
                 <th>File Size</th>
             </tr>
         </thead>
@@ -26,28 +29,61 @@
 </div>
 
 <script>
-    const dbReq = indexedDB.open("INDU4", 2); // Version 2 to match your code
+    // Force version 2 and handle potential upgrade blocks
+    const dbReq = indexedDB.open("INDU4", 2);
+
+    dbReq.onerror = (e) => console.error("Database Error:", e);
 
     dbReq.onsuccess = (e) => {
         const db = e.target.result;
+        
+        // Check if store exists before opening transaction
+        if (!db.objectStoreNames.contains("indu4")) {
+            document.body.innerHTML += "<p style='color:red; text-align:center;'>Error: Store 'indu4' not found!</p>";
+            return;
+        }
+
         const tx = db.transaction("indu4", "readonly");
         const store = tx.objectStore("indu4");
+        const tbody = document.querySelector("#list tbody");
         
-        // Use a cursor to walk through the files
         store.openCursor().onsuccess = (event) => {
             const cursor = event.target.result;
             if (cursor) {
-                const tbody = document.querySelector("#list tbody");
                 const row = tbody.insertRow();
+                const key = cursor.key;
+                const value = cursor.value;
                 
-                // The Key is the filename in your code
-                const fileName = cursor.key; 
-                // The Value is the Blob in your code
-                const fileBlob = cursor.value; 
-                
-                const size = (fileBlob.size / (1024 * 1024)).toFixed(2) + " MB";
+                let displaySize = "0 MB";
+                let dataType = typeof value;
 
-                row.innerHTML = `<td>${fileName}</td><td>${size}</td>`;
+                // CHECK 1: Is it a Blob? (Typical for your video files)
+                if (value instanceof Blob) {
+                    displaySize = (value.size / (1024 * 1024)).toFixed(2) + " MB";
+                    dataType = "Blob/File";
+                } 
+                // CHECK 2: Is it an ArrayBuffer? (Common for GLB models)
+                else if (value instanceof ArrayBuffer) {
+                    displaySize = (value.byteLength / (1024 * 1024)).toFixed(2) + " MB";
+                    dataType = "ArrayBuffer";
+                }
+                // CHECK 3: Is it an Object? (Sometimes used in wrappers)
+                else if (value && typeof value === 'object') {
+                    dataType = "Object";
+                    // Try to find size inside object if it exists
+                    if (value.data) {
+                        const inner = value.data;
+                        const bytes = inner.byteLength || inner.size || 0;
+                        displaySize = (bytes / (1024 * 1024)).toFixed(2) + " MB";
+                    }
+                }
+
+                row.innerHTML = `
+                    <td><b>${key}</b></td>
+                    <td><span class="type-tag">${dataType}</span></td>
+                    <td>${displaySize}</td>
+                `;
+                
                 cursor.continue();
             }
         };
