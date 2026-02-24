@@ -30,7 +30,7 @@
 
 <script>
     // Force version 2 and handle potential upgrade blocks
-    const dbReq = indexedDB.open("INDU4", 2);
+    const dbReq = indexedDB.open("INDU5", 2);
 
     dbReq.onerror = (e) => console.error("Database Error:", e);
 
@@ -38,7 +38,7 @@
         const db = e.target.result;
         
         // Check if store exists before opening transaction
-        if (!db.objectStoreNames.contains("indu4")) {
+        if (!db.objectStoreNames.contains("indu5")) {
             document.body.innerHTML += "<p style='color:red; text-align:center;'>Error: Store 'indu4' not found!</p>";
             return;
         }
