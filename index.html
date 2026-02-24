@@ -1,98 +1,57 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>INDU4 Local Storage Explorer</title>
+    <title>INDU4 - Simple View</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f0f0; padding: 20px; }
-        .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
-        th { background-color: #1f6b9c; color: white; }
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        .status { font-weight: bold; color: #2d8a2d; }
-        button { padding: 10px 15px; cursor: pointer; background: #d11a2a; color: white; border: none; border-radius: 4px; }
+        body { font-family: sans-serif; background: #ffe6f2; padding: 20px; color: #ff69b4; }
+        .box { background: white; padding: 20px; border-radius: 15px; border: 3px solid #ffb3d9; }
+        table { width: 100%; border-collapse: collapse; background: white; color: #333; }
+        th, td { padding: 10px; border: 1px solid #ffb3d9; text-align: left; }
+        th { background: #ff69b4; color: white; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <h2>Stored Videos in INDU4</h2>
-    <p id="db-status">Checking database...</p>
-    <table id="file-table">
+<div class="box">
+    <h2>✨ INDU4 Storage Inspector</h2>
+    <table id="list">
         <thead>
             <tr>
                 <th>File Name (Key)</th>
-                <th>Data Type</th>
-                <th>Approx. Size</th>
+                <th>File Size</th>
             </tr>
         </thead>
-        <tbody id="table-body">
-            </tbody>
+        <tbody></tbody>
     </table>
-    <br>
-    <button onclick="clearDatabase()">Wipe INDU4 Database</button>
 </div>
 
 <script>
-    const DB_NAME = "INDU4";
-    const STORE_NAME = "indu4";
+    const dbReq = indexedDB.open("INDU4", 2); // Version 2 to match your code
 
-    function loadData() {
-        const request = indexedDB.open(DB_NAME);
-
-        request.onsuccess = (e) => {
-            const db = e.target.result;
-            if (!db.objectStoreNames.contains(STORE_NAME)) {
-                document.getElementById('db-status').innerText = "Database is empty or not created yet.";
-                return;
-            }
-
-            const transaction = db.transaction(STORE_NAME, "readonly");
-            const store = transaction.objectStore(STORE_NAME);
-            const getAll = store.getAll();
-
-            getAll.onsuccess = () => {
-                const items = getAll.result;
-                const tbody = document.getElementById('table-body');
-                tbody.innerHTML = '';
+    dbReq.onsuccess = (e) => {
+        const db = e.target.result;
+        const tx = db.transaction("indu4", "readonly");
+        const store = tx.objectStore("indu4");
+        
+        // Use a cursor to walk through the files
+        store.openCursor().onsuccess = (event) => {
+            const cursor = event.target.result;
+            if (cursor) {
+                const tbody = document.querySelector("#list tbody");
+                const row = tbody.insertRow();
                 
-                if (items.length === 0) {
-                    document.getElementById('db-status').innerText = "No files found in storage.";
-                } else {
-                    document.getElementById('db-status').innerText = `Found ${items.length} files:`;
-                    items.forEach(item => {
-                        const row = tbody.insertRow();
-                        // item.name is the key, item.data is the ArrayBuffer
-                        const size = item.data ? (item.data.byteLength / (1024 * 1024)).toFixed(2) + " MB" : "Unknown";
-                        
-                        row.innerHTML = `
-                            <td>${item.name}</td>
-                            <td>Video/Blob</td>
-                            <td>${size}</td>
-                        `;
-                    });
-                }
-            };
+                // The Key is the filename in your code
+                const fileName = cursor.key; 
+                // The Value is the Blob in your code
+                const fileBlob = cursor.value; 
+                
+                const size = (fileBlob.size / (1024 * 1024)).toFixed(2) + " MB";
+
+                row.innerHTML = `<td>${fileName}</td><td>${size}</td>`;
+                cursor.continue();
+            }
         };
-
-        request.onerror = () => {
-            document.getElementById('db-status').innerText = "Error opening database.";
-        };
-    }
-
-    function clearDatabase() {
-        if (confirm("Are you sure you want to delete all locally stored videos?")) {
-            const req = indexedDB.deleteDatabase(DB_NAME);
-            req.onsuccess = () => {
-                alert("Database deleted. Refresh the page.");
-                location.reload();
-            };
-        }
-    }
-
-    // Run on load
-    loadData();
+    };
 </script>
-
 </body>
 </html>
