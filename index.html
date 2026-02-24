@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>INDU4 - Debugger</title>
+    <title>INDU5 - Debugger</title>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #ffe6f2; padding: 20px; }
         .box { background: white; padding: 20px; border-radius: 15px; border: 4px solid #ffb3d9; box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
@@ -15,7 +15,7 @@
 <body>
 
 <div class="box">
-    <h2>✨ INDU4 Internal Storage</h2>
+    <h2>✨ INDU5 Internal Storage Explorer</h2>
     <table id="list">
         <thead>
             <tr>
@@ -24,28 +24,34 @@
                 <th>File Size</th>
             </tr>
         </thead>
-        <tbody></tbody>
+        <tbody id="table-body"></tbody>
     </table>
 </div>
 
 <script>
-    // Force version 2 and handle potential upgrade blocks
-    const dbReq = indexedDB.open("INDU5", 2);
+    // 1. MUST MATCH YOUR MAIN CODE EXACTLY
+    const DB_NAME = "INDU5";
+    const STORE_NAME = "indu5"; 
+
+    const dbReq = indexedDB.open(DB_NAME, 2);
 
     dbReq.onerror = (e) => console.error("Database Error:", e);
 
     dbReq.onsuccess = (e) => {
         const db = e.target.result;
         
-        // Check if store exists before opening transaction
-        if (!db.objectStoreNames.contains("indu5")) {
-            document.body.innerHTML += "<p style='color:red; text-align:center;'>Error: Store 'indu4' not found!</p>";
+        // 2. CHECK IF THE STORE EXISTS
+        if (!db.objectStoreNames.contains(STORE_NAME)) {
+            document.getElementById('table-body').innerHTML = 
+                `<tr><td colspan="3" style="color:red; text-align:center;">
+                Error: Store '${STORE_NAME}' not found in ${DB_NAME}!
+                </td></tr>`;
             return;
         }
 
-        const tx = db.transaction("indu4", "readonly");
-        const store = tx.objectStore("indu4");
-        const tbody = document.querySelector("#list tbody");
+        const tx = db.transaction(STORE_NAME, "readonly");
+        const store = tx.objectStore(STORE_NAME);
+        const tbody = document.getElementById('table-body');
         
         store.openCursor().onsuccess = (event) => {
             const cursor = event.target.result;
@@ -57,20 +63,16 @@
                 let displaySize = "0 MB";
                 let dataType = typeof value;
 
-                // CHECK 1: Is it a Blob? (Typical for your video files)
                 if (value instanceof Blob) {
                     displaySize = (value.size / (1024 * 1024)).toFixed(2) + " MB";
                     dataType = "Blob/File";
                 } 
-                // CHECK 2: Is it an ArrayBuffer? (Common for GLB models)
                 else if (value instanceof ArrayBuffer) {
                     displaySize = (value.byteLength / (1024 * 1024)).toFixed(2) + " MB";
                     dataType = "ArrayBuffer";
                 }
-                // CHECK 3: Is it an Object? (Sometimes used in wrappers)
                 else if (value && typeof value === 'object') {
                     dataType = "Object";
-                    // Try to find size inside object if it exists
                     if (value.data) {
                         const inner = value.data;
                         const bytes = inner.byteLength || inner.size || 0;
@@ -85,6 +87,8 @@
                 `;
                 
                 cursor.continue();
+            } else if (tbody.rows.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="3" style="text-align:center;">Database is connected but empty.</td></tr>`;
             }
         };
     };
