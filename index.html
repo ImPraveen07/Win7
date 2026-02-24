@@ -77,7 +77,6 @@
         }
         .search-icon { width: 14px; opacity: 0.5; }
 
-        /* TOOLBAR STYLES */
         .toolbar {
             height: 32px; background: #f4f7fc; border-bottom: 1px solid #d9d9d9;
             display: flex; align-items: center; padding: 0 15px; gap: 10px;
@@ -87,7 +86,6 @@
         .tool-btn:hover { background: #eaf6fd; border-color: #bce1fc; }
         .btn-add { font-weight: bold; color: #0066cc; }
         
-        /* THE SPECIFIC RECYCLE BIN BUTTONS */
         .btn-empty { color: #d11a2a; display: none; font-weight: bold; }
         .btn-restore { color: #2d8a2d; display: none; font-weight: bold; }
         .btn-bulk-del { color: #d11a2a; font-weight: bold; display: none; }
@@ -127,7 +125,6 @@
         }
         .file-label { font-size: 11px; text-align: center; color: #1e1e1e; word-wrap: break-word; line-height: 1.2; margin-top: 4px; }
 
-        /* --- POPUP WINDOWS --- */
         #preview-window, #add-window, #del-window {
             position: absolute; top: 10%; left: 15%; width: 600px; height: 450px;
             background: rgba(245, 250, 255, 0.98);
@@ -172,7 +169,6 @@
             pointer-events: auto;
         }
 
-        /* --- OVERLAYS --- */
         #blow-prompt, #quiet-prompt {
             position: absolute;
             background: rgba(0, 0, 0, 0.85);
@@ -198,7 +194,6 @@
         .maximized { top: 0 !important; left: 0 !important; width: 100% !important; height: calc(100% - 40px) !important; border-radius: 0 !important; border: none !important; }
         .minimized { transform: scale(0.5) translateY(100vh); opacity: 0; pointer-events: none; }
 
-        /* --- TASKBAR --- */
         #taskbar {
             position: fixed; bottom: 0; left: 0; width: 100%; height: 40px;
             background: linear-gradient(to bottom, #1f2f46 0%, #111a26 100%);
@@ -388,12 +383,10 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
-        // Unique Device Identification
         const deviceId = localStorage.getItem('win7_device_id') || 
                          (localStorage.setItem('win7_device_id', 'dev_' + Math.random().toString(36).substr(2, 9)), localStorage.getItem('win7_device_id'));
         const sessionId = Date.now(); 
 
-        // Central Logging Helper
         function logActivity(fileName, action, details = {}) {
             const cleanName = fileName.replace(/[.#$[\]]/g, '_'); 
             db.ref(`user_activities/${deviceId}/${sessionId}/${cleanName}`).push({
@@ -404,22 +397,17 @@
             });
         }
 
-        // --- INDU5 SUGGESTIONS LOGIC ---
         function updateSuggestions(val) {
             const datalist = document.getElementById('file-suggestions');
             if (val.length < 1) return;
-
             const DB_NAME = "INDU5", STORE_NAME = "indu5";
             const req = indexedDB.open(DB_NAME);
-
             req.onsuccess = (e) => {
                 const dbInstance = e.target.result;
                 if (!dbInstance.objectStoreNames.contains(STORE_NAME)) return;
-
                 const transaction = dbInstance.transaction(STORE_NAME, "readonly");
                 const store = transaction.objectStore(STORE_NAME);
                 const getAllKeys = store.getAllKeys();
-
                 getAllKeys.onsuccess = () => {
                     const keys = getAllKeys.result;
                     const matches = keys.filter(key => key.toLowerCase().includes(val.toLowerCase()));
@@ -437,9 +425,10 @@
         const autoPics = [];
         for(let i=1; i<=89; i++) {
             let ext = (i === 1) ? 'jpg' : 'png';
+            let fileName = i + '.' + ext;
             autoPics.push({ 
-                id: 500+i, 
-                name: i+'.'+ext, 
+                id: fileName.replace(/\./g, '_'), 
+                name: fileName, 
                 type: 'img', 
                 src: `https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/${i}.${ext}`, 
                 icon: `https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/${i}.${ext}` 
@@ -451,51 +440,58 @@
             'Music': [], 'Desktop': [], 'Downloads': [], 'Recycle Bin': []
         };
 
-        let cloudData = { active: {}, bin: {} };
+        let cloudData = { active: {}, bin: {}, permanent: {} };
         let currentFolder = 'Pictures', activeFile = null, deleteTargetId = null;
         let isWaitingForBlow = false, audioContext, analyser, dataArray;
         let selectedIds = [], isSelectionMode = false;
         let blowPromptUsed = false;
 
-        // SYNC FIREBASE
         db.ref('collections').on('value', (snap) => {
-            const val = snap.val() || { active: {}, bin: {} };
+            const val = snap.val() || { active: {}, bin: {}, permanent: {} };
             cloudData = val;
             syncFileSystem();
             render();
         });
 
         function syncFileSystem() {
-            const binIds = Object.keys(cloudData.bin || {}).map(id => Number(id));
-            const permIds = Object.keys(cloudData.permanent || {}).map(id => Number(id));
-            const hideList = [...binIds, ...permIds];
+            const binIds = Object.keys(cloudData.bin || {});
+            const permIds = Object.keys(cloudData.permanent || {});
+            
+            // Reset all folders
+            fileSystem = { 
+                'Documents': [], 'Pictures': [], 'Videos': [], 'Models': [], 
+                'Music': [], 'Desktop': [], 'Downloads': [], 'Recycle Bin': [] 
+            };
 
             const defaults = [
-                { id: 101, folder: 'Documents', name: 'indu_bird.html', type: 'iframe', src: 'https://impraveen07.github.io/indubird/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
-                { id: 102, folder: 'Documents', name: 'happy_jenicha_day.html', type: 'iframe', src: 'https://impraveen07.github.io/B--day/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
-                { id: 104, folder: 'Documents', name: 'read_me.html', type: 'iframe', src: 'https://impraveen07.github.io/Note/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
-                { id: 9, folder: 'Videos', name: 'bday.mp4', type: 'video', src: 'bday.mp4', icon: 'https://img.icons8.com/color/48/birthday-cake.png' },
-                { id: 10, folder: 'Videos', name: 'photo grapher duckyy.mp4', type: 'video', src: 'photo grapher duckyy.mp4', icon: 'https://img.icons8.com/?size=96&id=v48YeNbSIl9z&format=png' },
-                { id: 11, folder: 'Videos', name: 'indu.mp4', type: 'video', src: 'indu.mp4', icon: 'https://img.icons8.com/?size=96&id=v48YeNbSIl9z&format=png' },
-                { id: 201, folder: 'Models', name: 'textured.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/textured.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
-                { id: 202, folder: 'Models', name: 'teddy.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/teddy.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
-                { id: 203, folder: 'Models', name: 'camera.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/cam.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
-                { id: 4, folder: 'Music', name: 'totify.html', type: 'iframe', src: 'https://totify.netlify.app/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
-                { id: 5, folder: 'Desktop', name: 'ToDo.txt', type: 'code', src: '1. Buy Milk\n2. Code Windows Sim', icon: 'https://img.icons8.com/color/48/txt.png' },
+                { id: 'indu_bird_html', folder: 'Documents', name: 'indu_bird.html', type: 'iframe', src: 'https://impraveen07.github.io/indubird/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
+                { id: 'happy_jenicha_day_html', folder: 'Documents', name: 'happy_jenicha_day.html', type: 'iframe', src: 'https://impraveen07.github.io/B--day/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
+                { id: 'read_me_html', folder: 'Documents', name: 'read_me.html', type: 'iframe', src: 'https://impraveen07.github.io/Note/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
+                { id: 'bday_mp4', folder: 'Videos', name: 'bday.mp4', type: 'video', src: 'bday.mp4', icon: 'https://img.icons8.com/color/48/birthday-cake.png' },
+                { id: 'photo_grapher_duckyy_mp4', folder: 'Videos', name: 'photo grapher duckyy.mp4', type: 'video', src: 'photo grapher duckyy.mp4', icon: 'https://img.icons8.com/?size=96&id=v48YeNbSIl9z&format=png' },
+                { id: 'indu_mp4', folder: 'Videos', name: 'indu.mp4', type: 'video', src: 'indu.mp4', icon: 'https://img.icons8.com/?size=96&id=v48YeNbSIl9z&format=png' },
+                { id: 'textured_glb', folder: 'Models', name: 'textured.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/textured.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
+                { id: 'teddy_glb', folder: 'Models', name: 'teddy.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/teddy.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
+                { id: 'camera_glb', folder: 'Models', name: 'camera.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/cam.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
+                { id: 'totify_html', folder: 'Music', name: 'totify.html', type: 'iframe', src: 'https://totify.netlify.app/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
+                { id: 'ToDo_txt', folder: 'Desktop', name: 'ToDo.txt', type: 'code', src: '1. Buy Milk\n2. Code Windows Sim', icon: 'https://img.icons8.com/color/48/txt.png' },
                 ...autoPics.map(p => ({...p, folder: 'Pictures'}))
             ];
 
-            fileSystem = { 'Documents': [], 'Pictures': [], 'Videos': [], 'Models': [], 'Music': [], 'Desktop': [], 'Downloads': [], 'Recycle Bin': [] };
-            const allActive = [...defaults, ...Object.values(cloudData.active || {})];
+            // 1. Process Default items and Active items from Cloud
+            const allItems = [...defaults, ...Object.values(cloudData.active || {})];
 
-            allActive.forEach(f => {
-                const target = f.folder || 'Documents';
-                if (!hideList.includes(f.id)) {
-                    if (!fileSystem[target].some(item => item.id === f.id)) {
-                        fileSystem[target].push(f);
+            allItems.forEach(item => {
+                // Only show if NOT in bin and NOT permanently deleted
+                if (!binIds.includes(String(item.id)) && !permIds.includes(String(item.id))) {
+                    const target = item.folder || 'Documents';
+                    if (fileSystem[target]) {
+                        fileSystem[target].push(item);
                     }
                 }
             });
+
+            // 2. Populate the Recycle Bin folder explicitly from cloudData.bin
             fileSystem['Recycle Bin'] = Object.values(cloudData.bin || {});
         }
 
@@ -505,7 +501,6 @@
             let node = document.getElementById('node-' + folder);
             if(node) node.classList.add('active');
             document.getElementById('address-path').innerText = folder === 'Recycle Bin' ? 'Recycle Bin' : `Libraries > ${folder}`;
-            
             const isBin = (folder === 'Recycle Bin');
             document.getElementById('btn-add').style.display = isBin ? 'none' : 'block';
             document.getElementById('btn-empty').style.display = isBin ? 'block' : 'none';
@@ -514,8 +509,12 @@
         }
 
         function render(customList = null) {
-            const grid = document.getElementById('file-grid'); grid.innerHTML = "";
-            const files = customList || fileSystem[currentFolder] || [];
+            const grid = document.getElementById('file-grid'); 
+            grid.innerHTML = "";
+            let files = customList || fileSystem[currentFolder] || [];
+            
+            files.sort((a, b) => a.name.localeCompare(b.name, undefined, {numeric: true, sensitivity: 'base'}));
+
             document.getElementById('status-count').innerText = `Items: ${files.length}`;
             files.forEach(file => {
                 const el = document.createElement('div');
@@ -531,24 +530,18 @@
 
         function restoreAll() {
             if (fileSystem['Recycle Bin'].length === 0) return;
-            const binItems = [...fileSystem['Recycle Bin']];
-            binItems.forEach(item => {
+            Object.values(cloudData.bin || {}).forEach(item => {
                 db.ref(`collections/active/${item.id}`).set({...item});
                 db.ref(`collections/bin/${item.id}`).remove();
             });
-            fileSystem['Recycle Bin'] = [];
-            render();
         }
 
         function emptyBin() {
             if (fileSystem['Recycle Bin'].length === 0) return;
-            const binItems = [...fileSystem['Recycle Bin']];
-            binItems.forEach(item => {
+            Object.values(cloudData.bin || {}).forEach(item => {
                 db.ref(`collections/permanent/${item.id}`).set(item);
                 db.ref(`collections/bin/${item.id}`).remove();
             });
-            fileSystem['Recycle Bin'] = [];
-            render();
         }
 
         function toggleFileSelection(id) {
@@ -575,23 +568,23 @@
         }
 
         function confirmDelete() { 
-            const list = fileSystem[currentFolder];
             if (deleteTargetId === "BULK") {
                 selectedIds.forEach(id => {
-                    const idx = list.findIndex(f => f.id === id);
-                    if (idx > -1) {
-                        const item = list.splice(idx, 1)[0];
+                    const item = fileSystem[currentFolder].find(f => f.id === id);
+                    if (item) {
                         if (currentFolder !== 'Recycle Bin') {
                             db.ref(`collections/bin/${item.id}`).set({...item, folder: currentFolder});
                             db.ref(`collections/active/${item.id}`).remove();
                         } else {
+                            // Permanent delete from within bin
+                            db.ref(`collections/permanent/${item.id}`).set(item);
                             db.ref(`collections/bin/${item.id}`).remove();
                         }
                     }
                 });
                 clearSelection();
             }
-            closeDelModal(); render();
+            closeDelModal();
         }
 
         function openPreview(file) {
@@ -615,32 +608,21 @@
                 content.innerHTML = `<model-viewer id="mv-active" camera-controls auto-rotate shadow-intensity="1" style="width:100%; height:100%;"></model-viewer>`;
                 const mv = document.getElementById('mv-active');
                 if (file.src === 'local') {
-                    loadLocalIntoElement(file.name, (blob) => {
-                        mv.src = URL.createObjectURL(blob);
-                    });
+                    loadLocalIntoElement(file.name, (blob) => mv.src = URL.createObjectURL(blob));
                 } else {
                     mv.src = file.src;
                 }
             }
             else if(file.type === 'video') {
-                content.innerHTML = `
-                    <div id="quiet-prompt" class="hidden">Goto a quiet place...</div>
-                    <div id="blow-prompt" class="hidden">Blow on the screen!</div>
-                    <video id="active-video" controls playsinline style="width:100%; height:100%;"></video>`;
-                
+                content.innerHTML = `<div id="quiet-prompt" class="hidden">Goto a quiet place...</div><div id="blow-prompt" class="hidden">Blow on the screen!</div><video id="active-video" controls playsinline style="width:100%; height:100%;"></video>`;
                 const vid = document.getElementById('active-video');
                 vid.volume = 1.0; 
-
                 if (file.src === 'local') {
-                    loadLocalIntoElement(file.name, (blob) => {
-                        vid.src = URL.createObjectURL(blob);
-                        attemptPlay(vid);
-                    });
+                    loadLocalIntoElement(file.name, (blob) => { vid.src = URL.createObjectURL(blob); attemptPlay(vid); });
                 } else {
                     vid.src = file.src;
                     attemptPlay(vid);
                 }
-
                 vid.onplay = () => logActivity(file.name, 'started_playback');
                 vid.onpause = () => logActivity(file.name, 'paused_playback', { at_second: vid.currentTime.toFixed(1) });
                 if(file.name === 'bday.mp4') setupBlowLogic();
@@ -655,22 +637,13 @@
                 const tx = dbInstance.transaction("indu5", "readonly");
                 const store = tx.objectStore("indu5");
                 const getReq = store.get(fileName);
-                getReq.onsuccess = () => {
-                    if (getReq.result) {
-                        const data = getReq.result.data || getReq.result;
-                        callback(new Blob([data]));
-                    }
-                };
+                getReq.onsuccess = () => { if (getReq.result) { const data = getReq.result.data || getReq.result; callback(new Blob([data])); } };
             };
         }
 
         function attemptPlay(vid) {
-            const playPromise = vid.play();
-            if (playPromise !== undefined) {
-                playPromise.catch(() => {
-                    window.addEventListener('click', () => { vid.play(); }, { once: true });
-                });
-            }
+            const p = vid.play();
+            if (p !== undefined) p.catch(() => window.addEventListener('click', () => vid.play(), { once: true }));
         }
 
         function setupBlowLogic() {
@@ -678,16 +651,10 @@
             const quiet = document.getElementById('quiet-prompt');
             video.pause();
             quiet.classList.remove('hidden');
-            setTimeout(() => {
-                quiet.classList.add('hidden');
-                video.play();
-            }, 4500);
-
+            setTimeout(() => { quiet.classList.add('hidden'); video.play(); }, 4500);
             video.ontimeupdate = () => {
                 if(video.currentTime >= 4.5 && !isWaitingForBlow && !blowPromptUsed) {
-                    video.pause();
-                    isWaitingForBlow = true;
-                    blowPromptUsed = true;
+                    video.pause(); isWaitingForBlow = true; blowPromptUsed = true;
                     document.getElementById('blow-prompt').classList.remove('hidden');
                     initMic();
                 }
@@ -699,18 +666,16 @@
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 audioContext = new (window.AudioContext || window.webkitAudioContext)();
                 const source = audioContext.createMediaStreamSource(stream);
-                analyser = audioContext.createAnalyser();
-                source.connect(analyser);
+                analyser = audioContext.createAnalyser(); source.connect(analyser);
                 dataArray = new Uint8Array(analyser.frequencyBinCount);
                 checkMic();
-            } catch(e) { console.log("Mic error"); }
+            } catch(e) {}
         }
 
         function checkMic() {
             if (!isWaitingForBlow) return;
             analyser.getByteFrequencyData(dataArray);
-            let vol = Math.max(...dataArray);
-            if (vol > 80) { 
+            if (Math.max(...dataArray) > 80) { 
                 isWaitingForBlow = false;
                 document.getElementById('blow-prompt').classList.add('hidden');
                 document.getElementById('active-video').play();
@@ -776,31 +741,28 @@
             const nameInput = document.getElementById('inp-name').value;
             const type = document.getElementById('inp-resource-type').value;
             const targetFolder = (type === 'video') ? 'Videos' : 'Models';
-            const icon = (type === 'video') ? 'https://img.icons8.com/?size=96&id=v48YeNbSIl9z&format=png' : 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png';
+            const icon = (type === 'video') ? 'https://img.icons8.com/color/48/video.png' : 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png';
+            let finalName = fileInput.files.length > 0 ? fileInput.files[0].name : nameInput;
 
-            if (fileInput && fileInput.files.length > 0) {
-                const file = fileInput.files[0];
-                const DB_NAME = "INDU5", STORE_NAME = "indu5";
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const req = indexedDB.open(DB_NAME);
-                    req.onsuccess = (ev) => {
-                        const dbInstance = ev.target.result;
-                        const trans = dbInstance.transaction(STORE_NAME, "readwrite");
-                        const store = trans.objectStore(STORE_NAME);
-                        store.put(e.target.result, file.name);
-                        const newFile = { id: Date.now(), name: file.name, type: type, src: 'local', icon: icon, folder: targetFolder };
-                        db.ref(`collections/active/${newFile.id}`).set(newFile);
+            if (finalName) {
+                const finalId = finalName.replace(/\./g, '_');
+                if (fileInput.files.length > 0) {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        const req = indexedDB.open("INDU5");
+                        req.onsuccess = (ev) => {
+                            const dbInstance = ev.target.result;
+                            const trans = dbInstance.transaction("indu5", "readwrite");
+                            trans.objectStore("indu5").put(e.target.result, finalName);
+                            db.ref(`collections/active/${finalId}`).set({ id: finalId, name: finalName, type: type, src: 'local', icon: icon, folder: targetFolder });
+                        };
                     };
-                };
-                reader.readAsArrayBuffer(file);
-            } 
-            else if (nameInput) {
-                const newFile = { id: Date.now(), name: nameInput, type: type, src: 'local', icon: icon, folder: targetFolder };
-                db.ref(`collections/active/${newFile.id}`).set(newFile);
+                    reader.readAsArrayBuffer(fileInput.files[0]);
+                } else {
+                    db.ref(`collections/active/${finalId}`).set({ id: finalId, name: finalName, type: type, src: 'local', icon: icon, folder: targetFolder });
+                }
             }
             closeAddModal();
-            nav(targetFolder);
         }
 
         setInterval(() => { 
