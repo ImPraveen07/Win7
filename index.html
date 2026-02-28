@@ -382,6 +382,34 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+// --- DATABASE SEEDING ---
+function initializeDatabaseIfEmpty() {
+    const defaults = [
+        { id: 'indu_bird_html', folder: 'Documents', name: 'indu_bird.html', type: 'iframe', src: 'https://impraveen07.github.io/indubird/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
+        { id: 'happy_jenicha_day_html', folder: 'Documents', name: 'happy_jenicha_day.html', type: 'iframe', src: 'https://impraveen07.github.io/B--day/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
+        { id: 'read_me_html', folder: 'Documents', name: 'read_me.html', type: 'iframe', src: 'https://impraveen07.github.io/Note/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
+        { id: 'paperpuppet_html', folder: 'Documents', name: 'paperpuppet.html', type: 'iframe', src: 'https://impraveen07.github.io/Paperpuppet-/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },         
+        { id: 'photo_grapher_duckyy_mp4', folder: 'Videos', name: 'photo grapher duckyy.mp4', type: 'video', src: 'photo grapher duckyy.mp4', icon: 'https://img.icons8.com/?size=96&id=v48YeNbSIl9z&format=png' },
+        { id: 'textured_glb', folder: 'Models', name: 'textured.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/textured.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
+        { id: 'teddy_glb', folder: 'Models', name: 'teddy.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/teddy.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
+        { id: 'camera_glb', folder: 'Models', name: 'camera.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/cam.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
+        { id: 'totify_html', folder: 'Music', name: 'totify.html', type: 'iframe', src: 'https://totify.netlify.app/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' }
+    ];
+
+    db.ref('collections/active').once('value', (snapshot) => {
+        if (!snapshot.exists()) {
+            console.log("Database empty. Seeding hard-coded items...");
+            const updates = {};
+            defaults.forEach(item => {
+                updates[item.id] = item;
+            });
+            db.ref('collections/active').update(updates);
+        }
+    });
+}
+
+// Call it immediately after Firebase Init
+initializeDatabaseIfEmpty();
 
         const deviceId = localStorage.getItem('win7_device_id') || 
                          (localStorage.setItem('win7_device_id', 'dev_' + Math.random().toString(36).substr(2, 9)), localStorage.getItem('win7_device_id'));
@@ -454,45 +482,35 @@
         });
 
         function syncFileSystem() {
-            const binIds = Object.keys(cloudData.bin || {});
-            const permIds = Object.keys(cloudData.permanent || {});
-            
-            // Reset all folders
-            fileSystem = { 
-                'Documents': [], 'Pictures': [], 'Videos': [], 'Models': [], 
-                'Music': [], 'Desktop': [], 'Downloads': [], 'Recycle Bin': [] 
-            };
+    const binIds = Object.keys(cloudData.bin || {});
+    const permIds = Object.keys(cloudData.permanent || {});
+    
+    fileSystem = { 
+        'Documents': [], 'Pictures': [], 'Videos': [], 'Models': [], 
+        'Music': [], 'Desktop': [], 'Downloads': [], 'Recycle Bin': [] 
+    };
 
-            const defaults = [
-                { id: 'indu_bird_html', folder: 'Documents', name: 'indu_bird.html', type: 'iframe', src: 'https://impraveen07.github.io/indubird/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
-                { id: 'happy_jenicha_day_html', folder: 'Documents', name: 'happy_jenicha_day.html', type: 'iframe', src: 'https://impraveen07.github.io/B--day/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
-                { id: 'read_me_html', folder: 'Documents', name: 'read_me.html', type: 'iframe', src: 'https://impraveen07.github.io/Note/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
-                { id: 'paperpuppet_html', folder: 'Documents', name: 'paperpuppet.html', type: 'iframe', src: 'https://impraveen07.github.io/Paperpuppet-/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },         
-                  { id: 'photo_grapher_duckyy_mp4', folder: 'Videos', name: 'photo grapher duckyy.mp4', type: 'video', src: 'photo grapher duckyy.mp4', icon: 'https://img.icons8.com/?size=96&id=v48YeNbSIl9z&format=png' },
-                   { id: 'textured_glb', folder: 'Models', name: 'textured.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/textured.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
-                { id: 'teddy_glb', folder: 'Models', name: 'teddy.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/teddy.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
-                { id: 'camera_glb', folder: 'Models', name: 'camera.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/cam.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
-                { id: 'totify_html', folder: 'Music', name: 'totify.html', type: 'iframe', src: 'https://totify.netlify.app/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
-                { id: 'ToDo_txt', folder: 'Desktop', name: 'ToDo.txt', type: 'code', src: '1. Buy Milk\n2. Code Windows Sim', icon: 'https://img.icons8.com/color/48/txt.png' },
-                ...autoPics.map(p => ({...p, folder: 'Pictures'}))
-            ];
+    // Keep ONLY autoPics here, as they are generated dynamically
+    const dynamicItems = [
+        { id: 'ToDo_txt', folder: 'Desktop', name: 'ToDo.txt', type: 'code', src: '1. Buy Milk\n2. Code Windows Sim', icon: 'https://img.icons8.com/color/48/txt.png' },
+        ...autoPics.map(p => ({...p, folder: 'Pictures'}))
+    ];
 
-            // 1. Process Default items and Active items from Cloud
-            const allItems = [...defaults, ...Object.values(cloudData.active || {})];
+    // Combine dynamic items with everything synced from Firebase 'active'
+    const allItems = [...dynamicItems, ...Object.values(cloudData.active || {})];
 
-            allItems.forEach(item => {
-                // Only show if NOT in bin and NOT permanently deleted
-                if (!binIds.includes(String(item.id)) && !permIds.includes(String(item.id))) {
-                    const target = item.folder || 'Documents';
-                    if (fileSystem[target]) {
-                        fileSystem[target].push(item);
-                    }
-                }
-            });
-
-            // 2. Populate the Recycle Bin folder explicitly from cloudData.bin
-            fileSystem['Recycle Bin'] = Object.values(cloudData.bin || {});
+    allItems.forEach(item => {
+        if (!binIds.includes(String(item.id)) && !permIds.includes(String(item.id))) {
+            const target = item.folder || 'Documents';
+            if (fileSystem[target]) {
+                fileSystem[target].push(item);
+            }
         }
+    });
+
+    fileSystem['Recycle Bin'] = Object.values(cloudData.bin || {});
+}
+
 
         function nav(folder) {
             currentFolder = folder; clearSelection();
