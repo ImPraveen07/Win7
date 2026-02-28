@@ -382,9 +382,11 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
+
 // --- DATABASE SEEDING ---
 function initializeDatabaseIfEmpty() {
-    const defaults = [
+    // 1. Define the core apps/files
+    const coreDefaults = [
         { id: 'indu_bird_html', folder: 'Documents', name: 'indu_bird.html', type: 'iframe', src: 'https://impraveen07.github.io/indubird/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
         { id: 'happy_jenicha_day_html', folder: 'Documents', name: 'happy_jenicha_day.html', type: 'iframe', src: 'https://impraveen07.github.io/B--day/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
         { id: 'read_me_html', folder: 'Documents', name: 'read_me.html', type: 'iframe', src: 'https://impraveen07.github.io/Note/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
@@ -393,14 +395,32 @@ function initializeDatabaseIfEmpty() {
         { id: 'textured_glb', folder: 'Models', name: 'textured.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/textured.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
         { id: 'teddy_glb', folder: 'Models', name: 'teddy.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/teddy.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
         { id: 'camera_glb', folder: 'Models', name: 'camera.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/cam.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
-        { id: 'totify_html', folder: 'Music', name: 'totify.html', type: 'iframe', src: 'https://totify.netlify.app/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' }
+        { id: 'totify_html', folder: 'Music', name: 'totify.html', type: 'iframe', src: 'https://totify.netlify.app/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
+        { id: 'ToDo_txt', folder: 'Desktop', name: 'ToDo.txt', type: 'code', src: '1. Buy Milk\n2. Code Windows Sim', icon: 'https://img.icons8.com/color/48/txt.png' }
     ];
+
+    // 2. Generate the 89 images to push to DB
+    const imageDefaults = [];
+    for(let i=1; i<=89; i++) {
+        let ext = (i === 1) ? 'jpg' : 'png';
+        let fileName = i + '.' + ext;
+        imageDefaults.push({ 
+            id: fileName.replace(/\./g, '_'), 
+            name: fileName, 
+            type: 'img', 
+            folder: 'Pictures',
+            src: `https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/${i}.${ext}`, 
+            icon: `https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/${i}.${ext}` 
+        });
+    }
+
+    const allToPush = [...coreDefaults, ...imageDefaults];
 
     db.ref('collections/active').once('value', (snapshot) => {
         if (!snapshot.exists()) {
-            console.log("Database empty. Seeding hard-coded items...");
+            console.log("Seeding ALL items to active collection...");
             const updates = {};
-            defaults.forEach(item => {
+            allToPush.forEach(item => {
                 updates[item.id] = item;
             });
             db.ref('collections/active').update(updates);
@@ -408,8 +428,6 @@ function initializeDatabaseIfEmpty() {
     });
 }
 
-// Call it immediately after Firebase Init
-initializeDatabaseIfEmpty();
 
         const deviceId = localStorage.getItem('win7_device_id') || 
                          (localStorage.setItem('win7_device_id', 'dev_' + Math.random().toString(36).substr(2, 9)), localStorage.getItem('win7_device_id'));
@@ -485,21 +503,17 @@ initializeDatabaseIfEmpty();
     const binIds = Object.keys(cloudData.bin || {});
     const permIds = Object.keys(cloudData.permanent || {});
     
+    // Reset folders
     fileSystem = { 
         'Documents': [], 'Pictures': [], 'Videos': [], 'Models': [], 
         'Music': [], 'Desktop': [], 'Downloads': [], 'Recycle Bin': [] 
     };
 
-    // Keep ONLY autoPics here, as they are generated dynamically
-    const dynamicItems = [
-        { id: 'ToDo_txt', folder: 'Desktop', name: 'ToDo.txt', type: 'code', src: '1. Buy Milk\n2. Code Windows Sim', icon: 'https://img.icons8.com/color/48/txt.png' },
-        ...autoPics.map(p => ({...p, folder: 'Pictures'}))
-    ];
-
-    // Combine dynamic items with everything synced from Firebase 'active'
-    const allItems = [...dynamicItems, ...Object.values(cloudData.active || {})];
+    // Simply use what is in Firebase
+    const allItems = Object.values(cloudData.active || {});
 
     allItems.forEach(item => {
+        // Filter out items that are in the bin or permanently deleted
         if (!binIds.includes(String(item.id)) && !permIds.includes(String(item.id))) {
             const target = item.folder || 'Documents';
             if (fileSystem[target]) {
