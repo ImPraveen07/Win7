@@ -328,6 +328,7 @@
                 <select id="inp-resource-type" style="width:100%; margin: 5px 0 15px 0; padding: 5px;" onchange="updateFolderContext(this.value)">
                     <option value="video">🎥 Video (MP4)</option>
                     <option value="model">📦 3D Model (GLB)</option>
+                    <option value="img">🖼 Image (JPG/PNG)</option>
                 </select>
 
                 <label style="font-weight:bold; color: #1f6b9c;">2. Pick from INDU5 Storage</label><br>
@@ -337,7 +338,7 @@
 
                 <div style="text-align:center; color:#999; font-size:10px; margin: 15px 0;">— OR UPLOAD NEW TO STORAGE —</div>
                 
-                <input type="file" id="inp-file" accept=".mp4,.glb" style="width:100%; margin-bottom:10px;">
+                <input type="file" id="inp-file" accept=".mp4,.glb,.jpg,.png" style="width:100%; margin-bottom:10px;">
             </div>
             <div style="text-align:right; margin-top:15px;">
                 <button class="btn-win" id="btn-save-action" onclick="saveFile()" style="font-weight:bold;">Add to Folder</button>
@@ -418,7 +419,9 @@
 
         function updateFolderContext(type) {
             const btn = document.getElementById('btn-save-action');
-            btn.innerText = type === 'video' ? 'Add to Videos' : 'Add to Models';
+            if(type === 'video') btn.innerText = 'Add to Videos';
+            else if(type === 'model') btn.innerText = 'Add to Models';
+            else btn.innerText = 'Add to Pictures';
         }
 
         // --- GENERATE MASSIVE IMAGE LIST ---
@@ -431,7 +434,8 @@
                 name: fileName, 
                 type: 'img', 
                 src: `https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/${i}.${ext}`, 
-                icon: `https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/${i}.${ext}` 
+                icon: `https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/${i}.${ext}`,
+                folder: 'Pictures'
             });
         }
 
@@ -449,62 +453,67 @@
         db.ref('collections').on('value', (snap) => {
             const val = snap.val() || { active: {}, bin: {}, permanent: {} };
             cloudData = val;
+
+            // --- FIRST RUN / SEED LOGIC ---
+            // Ensure all defaults exist in Firebase Active collection if not in bin
+            const binIds = Object.keys(cloudData.bin || {});
+            const permIds = Object.keys(cloudData.permanent || {});
+            const activeIds = Object.keys(cloudData.active || {});
+
+            const initialDefaults = [
+                { id: 'indu_bird_html', folder: 'Documents', name: 'indu_bird.html', type: 'iframe', src: 'https://impraveen07.github.io/indubird/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
+                { id: 'happy_jenicha_day_html', folder: 'Documents', name: 'happy_jenicha_day.html', type: 'iframe', src: 'https://impraveen07.github.io/B--day/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
+                { id: 'read_me_html', folder: 'Documents', name: 'read_me.html', type: 'iframe', src: 'https://impraveen07.github.io/Note/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
+                { id: 'paper_puppet_html', folder: 'Documents', name: 'paper_puppet.html', type: 'iframe', src: 'https://impraveen07.github.io/Paperpuppet-/', icon: 'https://img.icons8.com/?size=96&id=v48YeNbSIl9z&format=png' },
+                { id: 'photo_grapher_duckyy_mp4', folder: 'Videos', name: 'photo grapher duckyy.mp4', type: 'video', src: 'photo grapher duckyy.mp4', icon: 'https://img.icons8.com/?size=96&id=v48YeNbSIl9z&format=png' },
+                { id: 'textured_glb', folder: 'Models', name: 'textured.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/textured.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
+                { id: 'teddy_glb', folder: 'Models', name: 'teddy.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/teddy.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
+                { id: 'camera_glb', folder: 'Models', name: 'camera.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/cam.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
+                { id: 'totify_html', folder: 'Music', name: 'totify.html', type: 'iframe', src: 'https://totify.netlify.app/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
+                { id: 'ToDo_txt', folder: 'Desktop', name: 'ToDo.txt', type: 'code', src: '1. Buy Milk\n2. Code Windows Sim', icon: 'https://img.icons8.com/color/48/txt.png' },
+                ...autoPics
+            ];
+
+            initialDefaults.forEach(item => {
+                if(!activeIds.includes(item.id) && !binIds.includes(item.id) && !permIds.includes(item.id)) {
+                    db.ref(`collections/active/${item.id}`).set(item);
+                }
+            });
+
             syncFileSystem();
             render();
         });
- function syncFileSystem() {
-    const binIds = Object.keys(cloudData.bin || {});
-    const permIds = Object.keys(cloudData.permanent || {});
-    
-    // Reset all folders
-    fileSystem = { 
-        'Documents': [], 'Pictures': [], 'Videos': [], 'Models': [], 
-        'Music': [], 'Desktop': [], 'Downloads': [], 'Recycle Bin': [] 
-    };
 
-    const defaults = [
-        { id: 'indu_bird_html', folder: 'Documents', name: 'indu_bird.html', type: 'iframe', src: 'https://impraveen07.github.io/indubird/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
-        { id: 'happy_jenicha_day_html', folder: 'Documents', name: 'happy_jenicha_day.html', type: 'iframe', src: 'https://impraveen07.github.io/B--day/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
-        { id: 'read_me_html', folder: 'Documents', name: 'read_me.html', type: 'iframe', src: 'https://impraveen07.github.io/Note/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
-        { id: 'bday_mp4', folder: 'Videos', name: 'bday.mp4', type: 'video', src: 'bday.mp4', icon: 'https://img.icons8.com/color/48/birthday-cake.png' },
-        { id: 'photo_grapher_duckyy_mp4', folder: 'Videos', name: 'photo grapher duckyy.mp4', type: 'video', src: 'photo grapher duckyy.mp4', icon: 'https://img.icons8.com/?size=96&id=v48YeNbSIl9z&format=png' },
-        { id: 'indu_mp4', folder: 'Videos', name: 'indu.mp4', type: 'video', src: 'indu.mp4', icon: 'https://img.icons8.com/?size=96&id=v48YeNbSIl9z&format=png' },
-        { id: 'textured_glb', folder: 'Models', name: 'textured.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/textured.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
-        { id: 'teddy_glb', folder: 'Models', name: 'teddy.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/teddy.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
-        { id: 'camera_glb', folder: 'Models', name: 'camera.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/cam.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
-        { id: 'totify_html', folder: 'Music', name: 'totify.html', type: 'iframe', src: 'https://totify.netlify.app/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
-        { id: 'ToDo_txt', folder: 'Desktop', name: 'ToDo.txt', type: 'code', src: '1. Buy Milk\n2. Code Windows Sim', icon: 'https://img.icons8.com/color/48/txt.png' },
-        ...autoPics.map(p => ({...p, folder: 'Pictures'}))
-    ];
+        function syncFileSystem() {
+            const binIds = Object.keys(cloudData.bin || {});
+            const permIds = Object.keys(cloudData.permanent || {});
+            const activeItems = Object.values(cloudData.active || {});
+            
+            fileSystem = { 
+                'Documents': [], 'Pictures': [], 'Videos': [], 'Models': [], 
+                'Music': [], 'Desktop': [], 'Downloads': [], 'Recycle Bin': [] 
+            };
 
-    // 1. Get all IDs currently in the cloud 'active' list
-    const activeCloudItems = cloudData.active || {};
+            // Using a Map for deduplication based on ID
+            const registry = new Map();
 
-    // 2. Combine Defaults + Cloud (Cloud overrides defaults if IDs match)
-    const combinedActive = [...defaults];
-    
-    // Add cloud items if they aren't already in the list
-    Object.values(activeCloudItems).forEach(cloudItem => {
-        const exists = combinedActive.some(def => def.id === cloudItem.id);
-        if (!exists) combinedActive.push(cloudItem);
-    });
+            // All items from cloud are "the truth"
+            activeItems.forEach(item => registry.set(item.id, item));
 
-    // 3. Filter out anything that is in the Bin or Permanently deleted
-    combinedActive.forEach(item => {
-        const sId = String(item.id);
-        if (!binIds.includes(sId) && !permIds.includes(sId)) {
-            const target = item.folder || 'Documents';
-            if (fileSystem[target]) {
-                fileSystem[target].push(item);
-            }
+            registry.forEach(item => {
+                const sId = String(item.id);
+                // Only show if not in bin or deleted
+                if (!binIds.includes(sId) && !permIds.includes(sId)) {
+                    const target = item.folder || 'Documents';
+                    if (fileSystem[target]) fileSystem[target].push(item);
+                }
+            });
+
+            // Populate Bin
+            fileSystem['Recycle Bin'] = Object.values(cloudData.bin || {});
         }
-    });
 
-    // 4. Populate the Recycle Bin folder
-    fileSystem['Recycle Bin'] = Object.values(cloudData.bin || {});
-}
-
-                function nav(folder) {
+        function nav(folder) {
             currentFolder = folder; clearSelection();
             document.querySelectorAll('.tree-item').forEach(el => el.classList.remove('active'));
             let node = document.getElementById('node-' + folder);
@@ -585,7 +594,6 @@
                             db.ref(`collections/bin/${item.id}`).set({...item, folder: currentFolder});
                             db.ref(`collections/active/${item.id}`).remove();
                         } else {
-                            // Permanent delete from within bin
                             db.ref(`collections/permanent/${item.id}`).set(item);
                             db.ref(`collections/bin/${item.id}`).remove();
                         }
@@ -632,8 +640,6 @@
                     vid.src = file.src;
                     attemptPlay(vid);
                 }
-                vid.onplay = () => logActivity(file.name, 'started_playback');
-                vid.onpause = () => logActivity(file.name, 'paused_playback', { at_second: vid.currentTime.toFixed(1) });
                 if(file.name === 'bday.mp4') setupBlowLogic();
             }
             updateTaskbar();
@@ -741,72 +747,54 @@
             render(fileSystem[currentFolder].filter(f => f.name.toLowerCase().includes(query)));
         }
 
-        function openAddModal() { document.getElementById('add-window').classList.remove('hidden'); }
+        function openAddModal() { 
+            document.getElementById('inp-file').value = "";
+            document.getElementById('inp-name').value = "";
+            document.getElementById('add-window').classList.remove('hidden'); 
+        }
         function closeAddModal() { document.getElementById('add-window').classList.add('hidden'); }
         function closeDelModal() { document.getElementById('del-window').classList.add('hidden'); }
 
         async function saveFile() {
-    const fileInput = document.getElementById('inp-file');
-    const nameInput = document.getElementById('inp-name').value;
-    const typeSelect = document.getElementById('inp-resource-type').value;
-    
-    let file = fileInput.files[0];
-    let fileName = file ? file.name : nameInput;
+            const fileInput = document.getElementById('inp-file');
+            const nameInput = document.getElementById('inp-name').value;
+            const typeSelect = document.getElementById('inp-resource-type').value;
+            let file = fileInput.files[0];
+            let fileName = file ? file.name : nameInput;
+            if (!fileName) return;
 
-    if (!fileName) return;
+            const finalId = fileName.replace(/\./g, '_').toLowerCase();
+            let targetFolder = 'Documents';
+            let icon = 'https://img.icons8.com/color/48/file.png';
+            let type = typeSelect;
 
-    // Standardize ID: "my.photo.jpg" -> "my_photo_jpg"
-    const finalId = fileName.replace(/\./g, '_').toLowerCase();
-    
-    // Auto-detect folder and icon based on type or extension
-    let targetFolder = 'Documents';
-    let icon = 'https://img.icons8.com/color/48/file.png';
-    let type = typeSelect;
+            if (fileName.match(/\.(jpg|jpeg|png|gif)$/i) || type === 'img') {
+                targetFolder = 'Pictures'; type = 'img'; icon = 'https://img.icons8.com/color/48/image.png';
+            } else if (type === 'video' || fileName.endsWith('.mp4')) {
+                targetFolder = 'Videos'; type = 'video'; icon = 'https://img.icons8.com/color/48/video.png';
+            } else if (type === 'model' || fileName.endsWith('.glb')) {
+                targetFolder = 'Models'; type = 'model'; icon = 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png';
+            }
 
-    if (fileName.match(/\.(jpg|jpeg|png|gif)$/i)) {
-        targetFolder = 'Pictures';
-        type = 'img';
-        icon = 'https://img.icons8.com/color/48/image.png';
-    } else if (type === 'video' || fileName.endsWith('.mp4')) {
-        targetFolder = 'Videos';
-        type = 'video';
-        icon = 'https://img.icons8.com/color/48/video.png';
-    } else if (type === 'model' || fileName.endsWith('.glb')) {
-        targetFolder = 'Models';
-        type = 'model';
-        icon = 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png';
-    }
+            const fileData = { id: finalId, name: fileName, type: type, src: 'local', icon: icon, folder: targetFolder };
 
-    const fileData = {
-        id: finalId,
-        name: fileName,
-        type: type,
-        src: 'local',
-        icon: icon,
-        folder: targetFolder,
-        timestamp: Date.now()
-    };
-
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            const req = indexedDB.open("INDU5");
-            req.onsuccess = (ev) => {
-                const dbInstance = ev.target.result;
-                const trans = dbInstance.transaction("indu5", "readwrite");
-                trans.objectStore("indu5").put(e.target.result, fileName);
-                // Save metadata to Firebase to keep it in "Collection-Active"
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const req = indexedDB.open("INDU5");
+                    req.onsuccess = (ev) => {
+                        const dbInstance = ev.target.result;
+                        const trans = dbInstance.transaction("indu5", "readwrite");
+                        trans.objectStore("indu5").put(e.target.result, fileName);
+                        db.ref(`collections/active/${finalId}`).set(fileData);
+                    };
+                };
+                reader.readAsArrayBuffer(file);
+            } else {
                 db.ref(`collections/active/${finalId}`).set(fileData);
-            };
-        };
-        reader.readAsArrayBuffer(file);
-    } else {
-        // If just adding by name (referencing existing IndexedDB item)
-        db.ref(`collections/active/${finalId}`).set(fileData);
-    }
-    
-    closeAddModal();
-}
+            }
+            closeAddModal();
+        }
 
         setInterval(() => { 
             const d = new Date(); 
