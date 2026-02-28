@@ -452,50 +452,59 @@
             syncFileSystem();
             render();
         });
+ function syncFileSystem() {
+    const binIds = Object.keys(cloudData.bin || {});
+    const permIds = Object.keys(cloudData.permanent || {});
+    
+    // Reset all folders
+    fileSystem = { 
+        'Documents': [], 'Pictures': [], 'Videos': [], 'Models': [], 
+        'Music': [], 'Desktop': [], 'Downloads': [], 'Recycle Bin': [] 
+    };
 
-        function syncFileSystem() {
-            const binIds = Object.keys(cloudData.bin || {});
-            const permIds = Object.keys(cloudData.permanent || {});
-            
-            // Reset all folders
-            fileSystem = { 
-                'Documents': [], 'Pictures': [], 'Videos': [], 'Models': [], 
-                'Music': [], 'Desktop': [], 'Downloads': [], 'Recycle Bin': [] 
-            };
+    const defaults = [
+        { id: 'indu_bird_html', folder: 'Documents', name: 'indu_bird.html', type: 'iframe', src: 'https://impraveen07.github.io/indubird/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
+        { id: 'happy_jenicha_day_html', folder: 'Documents', name: 'happy_jenicha_day.html', type: 'iframe', src: 'https://impraveen07.github.io/B--day/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
+        { id: 'read_me_html', folder: 'Documents', name: 'read_me.html', type: 'iframe', src: 'https://impraveen07.github.io/Note/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
+        { id: 'bday_mp4', folder: 'Videos', name: 'bday.mp4', type: 'video', src: 'bday.mp4', icon: 'https://img.icons8.com/color/48/birthday-cake.png' },
+        { id: 'photo_grapher_duckyy_mp4', folder: 'Videos', name: 'photo grapher duckyy.mp4', type: 'video', src: 'photo grapher duckyy.mp4', icon: 'https://img.icons8.com/?size=96&id=v48YeNbSIl9z&format=png' },
+        { id: 'indu_mp4', folder: 'Videos', name: 'indu.mp4', type: 'video', src: 'indu.mp4', icon: 'https://img.icons8.com/?size=96&id=v48YeNbSIl9z&format=png' },
+        { id: 'textured_glb', folder: 'Models', name: 'textured.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/textured.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
+        { id: 'teddy_glb', folder: 'Models', name: 'teddy.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/teddy.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
+        { id: 'camera_glb', folder: 'Models', name: 'camera.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/cam.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
+        { id: 'totify_html', folder: 'Music', name: 'totify.html', type: 'iframe', src: 'https://totify.netlify.app/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
+        { id: 'ToDo_txt', folder: 'Desktop', name: 'ToDo.txt', type: 'code', src: '1. Buy Milk\n2. Code Windows Sim', icon: 'https://img.icons8.com/color/48/txt.png' },
+        ...autoPics.map(p => ({...p, folder: 'Pictures'}))
+    ];
 
-            const defaults = [
-                { id: 'indu_bird_html', folder: 'Documents', name: 'indu_bird.html', type: 'iframe', src: 'https://impraveen07.github.io/indubird/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
-                { id: 'happy_jenicha_day_html', folder: 'Documents', name: 'happy_jenicha_day.html', type: 'iframe', src: 'https://impraveen07.github.io/B--day/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
-                { id: 'read_me_html', folder: 'Documents', name: 'read_me.html', type: 'iframe', src: 'https://impraveen07.github.io/Note/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
-                { id: 'bday_mp4', folder: 'Videos', name: 'bday.mp4', type: 'video', src: 'bday.mp4', icon: 'https://img.icons8.com/color/48/birthday-cake.png' },
-                { id: 'photo_grapher_duckyy_mp4', folder: 'Videos', name: 'photo grapher duckyy.mp4', type: 'video', src: 'photo grapher duckyy.mp4', icon: 'https://img.icons8.com/?size=96&id=v48YeNbSIl9z&format=png' },
-                { id: 'indu_mp4', folder: 'Videos', name: 'indu.mp4', type: 'video', src: 'indu.mp4', icon: 'https://img.icons8.com/?size=96&id=v48YeNbSIl9z&format=png' },
-                { id: 'textured_glb', folder: 'Models', name: 'textured.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/textured.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
-                { id: 'teddy_glb', folder: 'Models', name: 'teddy.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/teddy.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
-                { id: 'camera_glb', folder: 'Models', name: 'camera.glb', type: 'model', src: 'https://raw.githubusercontent.com/ImPraveen07/Homeeeeeeeweww/main/cam.glb', icon: 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png' },
-                { id: 'totify_html', folder: 'Music', name: 'totify.html', type: 'iframe', src: 'https://totify.netlify.app/', icon: 'https://img.icons8.com/?size=96&id=20909&format=png' },
-                { id: 'ToDo_txt', folder: 'Desktop', name: 'ToDo.txt', type: 'code', src: '1. Buy Milk\n2. Code Windows Sim', icon: 'https://img.icons8.com/color/48/txt.png' },
-                ...autoPics.map(p => ({...p, folder: 'Pictures'}))
-            ];
+    // 1. Get all IDs currently in the cloud 'active' list
+    const activeCloudItems = cloudData.active || {};
 
-            // 1. Process Default items and Active items from Cloud
-            const allItems = [...defaults, ...Object.values(cloudData.active || {})];
+    // 2. Combine Defaults + Cloud (Cloud overrides defaults if IDs match)
+    const combinedActive = [...defaults];
+    
+    // Add cloud items if they aren't already in the list
+    Object.values(activeCloudItems).forEach(cloudItem => {
+        const exists = combinedActive.some(def => def.id === cloudItem.id);
+        if (!exists) combinedActive.push(cloudItem);
+    });
 
-            allItems.forEach(item => {
-                // Only show if NOT in bin and NOT permanently deleted
-                if (!binIds.includes(String(item.id)) && !permIds.includes(String(item.id))) {
-                    const target = item.folder || 'Documents';
-                    if (fileSystem[target]) {
-                        fileSystem[target].push(item);
-                    }
-                }
-            });
-
-            // 2. Populate the Recycle Bin folder explicitly from cloudData.bin
-            fileSystem['Recycle Bin'] = Object.values(cloudData.bin || {});
+    // 3. Filter out anything that is in the Bin or Permanently deleted
+    combinedActive.forEach(item => {
+        const sId = String(item.id);
+        if (!binIds.includes(sId) && !permIds.includes(sId)) {
+            const target = item.folder || 'Documents';
+            if (fileSystem[target]) {
+                fileSystem[target].push(item);
+            }
         }
+    });
 
-        function nav(folder) {
+    // 4. Populate the Recycle Bin folder
+    fileSystem['Recycle Bin'] = Object.values(cloudData.bin || {});
+}
+
+                function nav(folder) {
             currentFolder = folder; clearSelection();
             document.querySelectorAll('.tree-item').forEach(el => el.classList.remove('active'));
             let node = document.getElementById('node-' + folder);
@@ -737,33 +746,67 @@
         function closeDelModal() { document.getElementById('del-window').classList.add('hidden'); }
 
         async function saveFile() {
-            const fileInput = document.getElementById('inp-file');
-            const nameInput = document.getElementById('inp-name').value;
-            const type = document.getElementById('inp-resource-type').value;
-            const targetFolder = (type === 'video') ? 'Videos' : 'Models';
-            const icon = (type === 'video') ? 'https://img.icons8.com/color/48/video.png' : 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png';
-            let finalName = fileInput.files.length > 0 ? fileInput.files[0].name : nameInput;
+    const fileInput = document.getElementById('inp-file');
+    const nameInput = document.getElementById('inp-name').value;
+    const typeSelect = document.getElementById('inp-resource-type').value;
+    
+    let file = fileInput.files[0];
+    let fileName = file ? file.name : nameInput;
 
-            if (finalName) {
-                const finalId = finalName.replace(/\./g, '_');
-                if (fileInput.files.length > 0) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const req = indexedDB.open("INDU5");
-                        req.onsuccess = (ev) => {
-                            const dbInstance = ev.target.result;
-                            const trans = dbInstance.transaction("indu5", "readwrite");
-                            trans.objectStore("indu5").put(e.target.result, finalName);
-                            db.ref(`collections/active/${finalId}`).set({ id: finalId, name: finalName, type: type, src: 'local', icon: icon, folder: targetFolder });
-                        };
-                    };
-                    reader.readAsArrayBuffer(fileInput.files[0]);
-                } else {
-                    db.ref(`collections/active/${finalId}`).set({ id: finalId, name: finalName, type: type, src: 'local', icon: icon, folder: targetFolder });
-                }
-            }
-            closeAddModal();
-        }
+    if (!fileName) return;
+
+    // Standardize ID: "my.photo.jpg" -> "my_photo_jpg"
+    const finalId = fileName.replace(/\./g, '_').toLowerCase();
+    
+    // Auto-detect folder and icon based on type or extension
+    let targetFolder = 'Documents';
+    let icon = 'https://img.icons8.com/color/48/file.png';
+    let type = typeSelect;
+
+    if (fileName.match(/\.(jpg|jpeg|png|gif)$/i)) {
+        targetFolder = 'Pictures';
+        type = 'img';
+        icon = 'https://img.icons8.com/color/48/image.png';
+    } else if (type === 'video' || fileName.endsWith('.mp4')) {
+        targetFolder = 'Videos';
+        type = 'video';
+        icon = 'https://img.icons8.com/color/48/video.png';
+    } else if (type === 'model' || fileName.endsWith('.glb')) {
+        targetFolder = 'Models';
+        type = 'model';
+        icon = 'https://img.icons8.com/?size=96&id=3EIcqI7ZYG5R&format=png';
+    }
+
+    const fileData = {
+        id: finalId,
+        name: fileName,
+        type: type,
+        src: 'local',
+        icon: icon,
+        folder: targetFolder,
+        timestamp: Date.now()
+    };
+
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            const req = indexedDB.open("INDU5");
+            req.onsuccess = (ev) => {
+                const dbInstance = ev.target.result;
+                const trans = dbInstance.transaction("indu5", "readwrite");
+                trans.objectStore("indu5").put(e.target.result, fileName);
+                // Save metadata to Firebase to keep it in "Collection-Active"
+                db.ref(`collections/active/${finalId}`).set(fileData);
+            };
+        };
+        reader.readAsArrayBuffer(file);
+    } else {
+        // If just adding by name (referencing existing IndexedDB item)
+        db.ref(`collections/active/${finalId}`).set(fileData);
+    }
+    
+    closeAddModal();
+}
 
         setInterval(() => { 
             const d = new Date(); 
